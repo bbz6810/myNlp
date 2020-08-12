@@ -109,7 +109,7 @@ class LR:
 
 
 if __name__ == '__main__':
-    from ml.textCategory.category_tfidf import Category
+    from machine_learning.textCategory.category_tfidf import Category
 
     category = Category()
     category.load()

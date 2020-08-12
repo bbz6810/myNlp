@@ -1,11 +1,11 @@
 import re
 
-from ml.split.myJieba import myJieba
+from machine_learning.split.myJieba import myJieba
 
-from ml.pos.HMM import P as state_tab
-from ml.pos.HMM.start import P as start
-from ml.pos.HMM import P as trans
-from ml.pos.HMM.emit import P as emit
+from machine_learning.pos.HMM import P as state_tab
+from machine_learning.pos.HMM.start import P as start
+from machine_learning.pos.HMM import P as trans
+from machine_learning.pos.HMM.emit import P as emit
 
 re_han_detail = re.compile("([\u4E00-\u9FD5]+)")
 re_skip_detail = re.compile("([\.0-9]+|[a-zA-Z0-9]+)")

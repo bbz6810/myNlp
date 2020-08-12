@@ -1,7 +1,7 @@
 import numpy as np
 from keras import models, layers
-from dl.data_pretreatment import Pretreatment
-from dl.nn import NN
+from deep_learning.data_pretreatment import Pretreatment
+from deep_learning.nn import NN
 
 batch_size = 1024
 epochs = 3

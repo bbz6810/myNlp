@@ -148,8 +148,3 @@ def running_of_time(f):
         return r
 
     return g
-
-
-def load_paper_wv():
-    wv_model = KeyedVectors.load_word2vec_format(paper_wv_path)
-    return wv_model

@@ -20,6 +20,6 @@ category_path = {
 imdb_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'imdb.npz')
 imdb_word_index_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'imdb_word_index.json')
 
-wv_model_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'model', 'wv_model.model')
+wv_model_path = os.path.join(corpus_root_path, 'sgns.renmin.bigram-char')
 
 stop_path = os.path.join(corpus_root_path, 'stopwords.txt')

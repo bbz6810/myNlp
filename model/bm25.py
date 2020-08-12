@@ -10,17 +10,17 @@
     4、计算每个词和文档和相关性得分: R(q_i, d)
         一般形式:
             R(q_i, d) = [(f_i*(k_1 + 1)) / (f_i + K)] * [(qf_i*(k_2 + 1)) / (qf_i + k_2)]
-            K = k_1 * (1 - b + b * dl / avgdl)
+            K = k_1 * (1 - b + b * deep_learning / avgdl)
 
             其中k_1, k_2, b 是调节因子，可根据实际情况设定，一般 k_1 = 2, b = 0.75
             1. f_i 为 q_i 在文档d中出现的频率
             2. qf_i 为 q_i 在query中出现的频率
-            3. dl 为当前query的长度， avgdl 为所有文档的平均长度
+            3. deep_learning 为当前query的长度， avgdl 为所有文档的平均长度
 
             由于大部分情况下 qf_i 都为 1，所以上面的Score式子可以简化为：
 
             R(q_i, d) = (f_i*(k_1+1)) / (f_i + K)
-                      = (f_i * (k_1 + 1)) / (f_i + (k_1 * (1-b+b*dl/avgdl)))
+                      = (f_i * (k_1 + 1)) / (f_i + (k_1 * (1-b+b*deep_learning/avgdl)))
             注：
                 从K的定义可以看到参数b的作用是调节文档长度对相关性的影响。
                 b越大则文档长度对相关性的影响越大，反之越小
@@ -30,7 +30,7 @@
                 的相关性弱
 
     5、综上Score公式为：
-        Score(query, d) = ∑ IDF(q_i) * [(f_i * (k_1 + 1)) / (f_i + (k_1 * (1-b+b*dl/avgdl)))]
+        Score(query, d) = ∑ IDF(q_i) * [(f_i * (k_1 + 1)) / (f_i + (k_1 * (1-b+b*deep_learning/avgdl)))]
 """
 import jieba
 
@@ -68,7 +68,7 @@ class BM25:
             return 1
 
     def word_score(self, word, doc_index, K):
-        # ∑ IDF(q_i) * [(f_i * (k_1 + 1)) / (f_i + (k_1 * (1-b+b*dl/avgdl)))]
+        # ∑ IDF(q_i) * [(f_i * (k_1 + 1)) / (f_i + (k_1 * (1-b+b*deep_learning/avgdl)))]
         idf = self.get_idf(word)
         f_i = self.get_f_i(word, doc_index)
         return idf * ((f_i * (self.k_1 + 1)) / (f_i + K))

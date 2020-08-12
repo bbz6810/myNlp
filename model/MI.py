@@ -5,7 +5,7 @@
 import math
 import numpy as np
 
-word_path = '/projects/myNlp/ml/wechat_new_word_data.txt'
+word_path = '/projects/myNlp/machine_learning/wechat_new_word_data.txt'
 
 
 def read_data():

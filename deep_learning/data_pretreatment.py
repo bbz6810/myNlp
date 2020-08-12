@@ -5,7 +5,6 @@ from keras.preprocessing.sequence import pad_sequences
 from sklearn.model_selection import train_test_split
 
 from corpus.load_corpus import LoadCorpus
-from tools import load_paper_wv
 
 
 class NNParam:
@@ -86,7 +85,7 @@ class Pretreatment:
         print('该切片的第一个词频次', x_r[split])
         for item in x_r[split:]:
             small_word_index.pop(item[0])
-        wv_model = load_paper_wv()
+        wv_model = LoadCorpus.load_wv_model()
         embedding_matrix = np.zeros(shape=(self.nnparam.vocab_size + 1, self.nnparam.embedding_dim))
         for word, index in small_word_index.items():
             try:

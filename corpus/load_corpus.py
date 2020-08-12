@@ -1,10 +1,8 @@
-import os
 import re
 import jieba
 import random
 
-from gensim.models import word2vec
-from gensim import models
+from gensim.models import KeyedVectors
 
 from corpus import wv_model_path, news_jieba_path, chatbot100_path
 from tools import n_gram, running_of_time
@@ -41,7 +39,7 @@ class LoadCorpus:
             f.close()
             return X, Y
 
-        generate_XY(p)
+        return generate_XY(p)
 
     @classmethod
     def load_news_train(cls, _n_gram=None, c=2):
@@ -85,34 +83,12 @@ class LoadCorpus:
 
     @classmethod
     @running_of_time
-    def load_wv_model(cls, re_build=False):
-        """加载目前所有语料生成的word2vec模型
-            1、如果没有该文件则生成
-            2、如果有该文件则直接加载
-            3、如果re_build是True则重新训练词向量
+    def load_wv_model(cls):
+        """加载人民日报语料生成的word2vec模型
 
         :return:
         """
-        if re_build:
-            print('===============begin rebuild train word2vec.=================')
-            train_x, train_y = cls.load_news_train()
-            wv_model = word2vec.Word2Vec(train_x, window=5, min_count=3, workers=4)
-            print('===============rebuild train word2vec complete.=================')
-            wv_model.save(wv_model_path)
-            print('===============rebuild save word2vec complete.=================')
-            return wv_model
-        else:
-            if os.path.exists(wv_model_path):
-                print('===============load word2vec complete.=================')
-                return models.Word2Vec.load(wv_model_path)
-            else:
-                print('===============begin train word2vec.=================')
-                train_x, train_y = cls.load_news_train()
-                wv_model = word2vec.Word2Vec(train_x, window=5, min_count=3, workers=4)
-                print('===============train word2vec complete.=================')
-                wv_model.save(wv_model_path)
-                print('===============save word2vec complete.=================')
-                return wv_model
+        return KeyedVectors.load_word2vec_format(wv_model_path)
 
 
 if __name__ == '__main__':
