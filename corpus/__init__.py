@@ -3,6 +3,7 @@ import os
 corpus_root_path = '/Users/zhoubb/projects/corpus'
 
 news_jieba_path = os.path.join(corpus_root_path, 'news_fasttext_train_jieba.txt')
+chatbot100_path = os.path.join(corpus_root_path, 'chatbot100')
 
 wechat_new_word_data_path = os.path.join(corpus_root_path, 'wechat_new_word_data.txt')
 

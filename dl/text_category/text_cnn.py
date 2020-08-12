@@ -3,7 +3,7 @@ from keras import models, layers
 from dl.nn import NN
 from dl.data_pretreatment import Pretreatment
 
-batch_size = 128
+batch_size = 64
 epochs = 3
 
 

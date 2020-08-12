@@ -36,7 +36,7 @@ class FastText(NN):
 
 def run():
     pretreatment = Pretreatment()
-    train_x, test_x, train_y, test_y = pretreatment.train_test_split(c=2, test_size=0.6)
+    train_x, test_x, train_y, test_y = pretreatment.train_test_split(c=5, test_size=0.6)
     embedding_matrix = pretreatment.create_embedding_matrix(20000)
     textrnn = FastText(pretreatment.nnparam)
     textrnn.train(train_x, train_y, embedding_matrix)

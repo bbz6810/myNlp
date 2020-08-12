@@ -1,17 +1,47 @@
 import os
+import re
 import jieba
 import random
 
 from gensim.models import word2vec
 from gensim import models
 
-from corpus import wv_model_path, news_jieba_path
+from corpus import wv_model_path, news_jieba_path, chatbot100_path
 from tools import n_gram, running_of_time
 
 
 class LoadCorpus:
     def __init__(self):
         pass
+
+    @classmethod
+    def load_chatbot100_train(cls):
+        p = '/Users/zhoubb/projects/corpus/chatbot.txt'
+        data = open(chatbot100_path, 'rb')
+        output = open(p, 'w', encoding="utf-8")
+        lines = data.readlines()
+        for line in lines:
+            segments = ' '.join(jieba.cut(line.strip()))
+            output.write(segments + '\n')
+        data.close()
+        output.close()
+
+        def generate_XY(segments_file):
+            f = open(segments_file, 'r', encoding='utf-8')
+            data = f.read()
+            X = []
+            Y = []
+            conversations = data.split('E')
+            for q_a in conversations:
+                if re.findall('.*M.*M.*', q_a, flags=re.DOTALL):
+                    q_a = q_a.strip()
+                    q_a_pair = q_a.split('M')
+                    X.append(q_a_pair[1].strip())
+                    Y.append(q_a_pair[2].strip())
+            f.close()
+            return X, Y
+
+        generate_XY(p)
 
     @classmethod
     def load_news_train(cls, _n_gram=None, c=2):
@@ -86,6 +116,4 @@ class LoadCorpus:
 
 
 if __name__ == '__main__':
-    v = LoadCorpus.load_wv_model()
-    for word in v.wv.vocab:
-        print(v[word], word)
+    LoadCorpus.load_chatbot100_train()
