@@ -1,8 +1,13 @@
 import os
 
-wechat_new_word_data_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'wechat_new_word_data.txt')
+corpus_root_path = '/Users/zhoubb/projects/corpus'
 
-paper_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'people1998.txt')
+news_jieba_path = os.path.join(corpus_root_path, 'news_fasttext_train_jieba.txt')
+
+wechat_new_word_data_path = os.path.join(corpus_root_path, 'wechat_new_word_data.txt')
+
+paper_path = os.path.join(corpus_root_path, 'people1998.txt')
+paper_wv_path = os.path.join(corpus_root_path, 'sgns.renmin.bigram-char')
 
 line_r_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'line_r.txt')
 
@@ -16,4 +21,4 @@ imdb_word_index_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
 
 wv_model_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'model', 'wv_model.model')
 
-stop_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'stopwords.txt')
+stop_path = os.path.join(corpus_root_path, 'stopwords.txt')

@@ -5,10 +5,8 @@ import random
 from gensim.models import word2vec
 from gensim import models
 
-from corpus import wv_model_path
+from corpus import wv_model_path, news_jieba_path
 from tools import n_gram, running_of_time
-
-wechat_jieba_path = '/Users/zhoubb/Downloads/news_fasttext_train_jieba.txt'
 
 
 class LoadCorpus:
@@ -31,12 +29,11 @@ class LoadCorpus:
 
         random.shuffle(load_labels)
         load_label = load_labels[:c]
-        load_label = ['house', 'affairs']
         print('随机取{}个标签为:{}'.format(c, load_label))
 
         train_x = []
         train_y = []
-        with open(wechat_jieba_path, encoding='gb2312', errors='ignore', mode='r') as f:
+        with open(news_jieba_path, encoding='gb2312', errors='ignore', mode='r') as f:
             if _n_gram:
                 for line in f.readlines():
                     t = line.strip().split(' ')

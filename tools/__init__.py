@@ -12,6 +12,7 @@ stop = set(' ')
 
 wechat_path = '/Users/zhoubb/Downloads/news_fasttext_train.txt'
 wechat_jieba_path = '/Users/zhoubb/Downloads/news_fasttext_train_jieba.txt'
+from corpus import paper_wv_path
 
 with open(stop_path, encoding='utf8', mode='r') as f:
     for line in f.readlines():
@@ -150,5 +151,5 @@ def running_of_time(f):
 
 
 def load_paper_wv():
-    wv_model = KeyedVectors.load_word2vec_format('/Users/zhoubb/projects/sgns.renmin.bigram-char')
+    wv_model = KeyedVectors.load_word2vec_format(paper_wv_path)
     return wv_model
