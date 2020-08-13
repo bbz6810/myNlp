@@ -2,9 +2,9 @@ import re
 import jieba
 import random
 
-from gensim.models import KeyedVectors
+from gensim.models import KeyedVectors, word2vec
 
-from corpus import wv_model_path, news_jieba_path, chatbot100_path
+from corpus import wv_model_path, news_jieba_path, chatbot100_path, wv60_model_path, xiaohuangji_path
 from tools import n_gram, running_of_time
 
 
@@ -37,6 +37,38 @@ class LoadCorpus:
                     X.append(q_a_pair[1].strip())
                     Y.append(q_a_pair[2].strip())
             f.close()
+            return X, Y
+
+        return generate_XY(p)
+
+    @classmethod
+    def load_xiaohuangji_train(cls):
+        p = '/Users/zhoubb/projects/corpus/xiaohuangji50w_fenciA.txt'
+        data = open(xiaohuangji_path, 'rb')
+        output = open(p, 'w', encoding="utf-8")
+        lines = data.readlines()
+        for line in lines:
+            output.write(line.replace(b'/', b' ').decode())
+        output.close()
+        data.close()
+
+        def generate_XY(segments_file):
+            f = open(segments_file, 'r', encoding='utf-8')
+            data = f.read()
+            X = []
+            Y = []
+            conversations = data.split('E')
+            for q_a in conversations:
+                if re.findall('.*M.*M.*', q_a, flags=re.DOTALL):
+                    q_a = q_a.strip()
+                    q_a_pair = q_a.split('M')
+                    X.append(q_a_pair[1].strip())
+                    Y.append(q_a_pair[2].strip())
+            f.close()
+            print('x对话最长字符', max(len(i) for i in X))
+            print('x对话平均字符', sum(len(i) for i in X) / len(X))
+            print('y对话最长字符', max(len(i) for i in Y))
+            print('y对话平均字符', sum(len(i) for i in Y) / len(Y))
             return X, Y
 
         return generate_XY(p)
@@ -90,6 +122,12 @@ class LoadCorpus:
         """
         return KeyedVectors.load_word2vec_format(wv_model_path)
 
+    @classmethod
+    @running_of_time
+    def load_wv60_model(cls):
+        print('加载模型', wv60_model_path)
+        return word2vec.Word2Vec.load(wv60_model_path)
+
 
 if __name__ == '__main__':
-    LoadCorpus.load_chatbot100_train()
+    LoadCorpus.load_xiaohuangji_train()
