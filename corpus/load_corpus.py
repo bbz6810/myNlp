@@ -69,7 +69,7 @@ class LoadCorpus:
             print('x对话平均字符', sum(len(i) for i in X) / len(X))
             print('y对话最长字符', max(len(i) for i in Y))
             print('y对话平均字符', sum(len(i) for i in Y) / len(Y))
-            return X, Y
+            return X[:10000], Y[:10000]
 
         return generate_XY(p)
 

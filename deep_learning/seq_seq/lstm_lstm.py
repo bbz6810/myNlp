@@ -1,6 +1,7 @@
 import numpy as np
 import jieba
 from keras import layers, models
+from keras import optimizers
 from keras.preprocessing.sequence import pad_sequences
 from corpus import xiaohuangji_model_path
 from corpus.load_corpus import LoadCorpus
@@ -10,8 +11,8 @@ hidden_dim = 256
 word_dim = 60
 ty = 10
 
-batch_size = 64
-epochs = 3
+batch_size = 32
+epochs = 100
 
 
 def train():
@@ -41,7 +42,6 @@ def train():
     y_input = generate_decoder_input(train_y)
 
     model = build_nn()
-
     model.compile(optimizer='adam', loss='mse', metrics=['accuracy'])
     model.fit([train_x, y_input], train_y, epochs=epochs, batch_size=batch_size)
     model.save(xiaohuangji_model_path)
@@ -124,4 +124,5 @@ def predict():
 
 if __name__ == '__main__':
     # predict()
-    train()
+    # train()
+    build_nn()
