@@ -1,7 +1,6 @@
 import numpy as np
 import jieba
 from keras import layers, models
-from keras import optimizers
 from keras.preprocessing.sequence import pad_sequences
 from corpus import seq2seq_model_path
 from corpus.load_corpus import LoadCorpus

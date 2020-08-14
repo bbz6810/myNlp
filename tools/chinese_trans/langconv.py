@@ -1,17 +1,7 @@
 from copy import deepcopy
 import re
 
-try:
-    import psyco
-
-    psyco.full()
-except:
-    pass
-
-try:
-    from zh_wiki import zh2Hant, zh2Hans
-except ImportError:
-    from zhtools.zh_wiki import zh2Hant, zh2Hans
+from tools.chinese_trans.zh_wiki import zh2Hant, zh2Hans
 
 import sys
 
@@ -243,6 +233,20 @@ registery('zh-hans', zh2Hans)
 del zh2Hant, zh2Hans
 
 
+# 转换繁体到简体
+def cht_to_chs(line):
+    line = Converter('zh-hans').convert(line)
+    line.encode('utf-8')
+    return line
+
+
+# 转换简体到繁体
+def chs_to_cht(line):
+    line = Converter('zh-hant').convert(line)
+    line.encode('utf-8')
+    return line
+
+
 def run():
     import sys
     from optparse import OptionParser
@@ -276,3 +280,11 @@ def run():
         # print >> file_out, c.convert(line.rstrip('\n').decode(
         file_out.write(c.convert(line.rstrip('\n').decode(
             'utf8')).encode('utf8'))
+
+
+if __name__ == '__main__':
+    line_cht = '<>123asdasd把中文字符串進行繁體和簡體中文的轉換'
+    line_chs = '<>123asdasd把中文字符串进行繁体和简体中文的转换'
+    ret_chs = "%s\n" % cht_to_chs(line_cht)
+    ret_cht = "%s\n" % chs_to_cht(line_chs)
+    print(ret_chs)

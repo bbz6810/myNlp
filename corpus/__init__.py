@@ -10,6 +10,7 @@ news_jieba_path = os.path.join(corpus_root_path, 'news_fasttext_train_jieba.txt'
 chatbot100_path = os.path.join(corpus_root_path, 'chatbot100')
 xiaohuangji_path = os.path.join(corpus_root_path, 'xiaohuangji50w_fenciA.conv')
 seq2seq_model_path = os.path.join(corpus_root_path, 'seq2seq.h5')
+seq2seq2_model_path = os.path.join(corpus_root_path, 'seq2seq2.h5')
 
 wechat_new_word_data_path = os.path.join(corpus_root_path, 'wechat_new_word_data.txt')
 
@@ -33,3 +34,4 @@ wv60_model_path = os.path.join(corpus_root_path, 'Word60.model')
 stop_path = os.path.join(corpus_root_path, 'stopwords.txt')
 
 chinese_to_english_path = os.path.join(corpus_root_path, 'cmn-eng/cmn.txt')
+french_to_english_path = os.path.join(corpus_root_path, 'fra-eng/fra.txt')
