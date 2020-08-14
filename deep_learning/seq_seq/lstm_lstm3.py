@@ -19,7 +19,7 @@ from tools.chinese_trans.langconv import cht_to_chs
 from corpus.load_corpus import LoadCorpus
 
 batch_size = 64
-epochs = 100
+epochs = 10
 latent_dim = 256
 samples = 10000
 
@@ -47,8 +47,8 @@ def load_seq2(maxlen):
 
 
 def load_seq3(maxlen):
-    # x, y = LoadCorpus.load_chatbot100_train()
-    x, y = LoadCorpus.load_xiaohuangji_train()
+    x, y = LoadCorpus.load_chatbot100_train()
+    # x, y = LoadCorpus.load_xiaohuangji_train()
     x = [''.join(s.split()) for s in x]
     y = [''.join(s.split()) for s in y]
     y = ['\t' + s + '\n' for s in y]
@@ -60,7 +60,7 @@ target_characters = set()
 
 
 def run():
-    x, y = load_seq2(samples)
+    x, y = load_seq3(samples)
     for _x, _y in zip(x, y):
         for cx in _x:
             input_characters.add(cx)
@@ -82,9 +82,13 @@ def run():
     decoder_input_data = np.zeros(shape=(len(x), max_output_seq_length, len(target_characters)), dtype='float32')
     decoder_target_data = np.zeros(shape=(len(x), max_output_seq_length, len(target_characters)), dtype='float32')
 
-    print('encoder_input_data.shape', encoder_input_data.shape)
-    print('decoder_input_data.shape', decoder_input_data.shape)
-    print('decoder_target_data.shape', decoder_target_data.shape)
+    print('encoder 输入.shape', encoder_input_data.shape)
+    print('decoder 输入.shape', decoder_input_data.shape)
+    print('decoder 输出.shape', decoder_target_data.shape)
+
+    # for i, j in zip(x, y):
+    #     print(i, j)
+    # return
 
     for i, (input_text, target_text) in enumerate(zip(x, y)):
         for t, char in enumerate(input_text):
@@ -114,7 +118,7 @@ def run():
     model.save(seq2seq2_model_path)
 
     model = models.load_model(seq2seq2_model_path)
-    # encoder_inputs = model.get_layer('encoder_inputs')
+    # encoder_inputs = model.get_layer('encoder_inputs').input
     encoder_inputs = layers.Input(shape=(None, len(input_characters)), name='encoder_inputs')
     encoder_lstm = model.get_layer('encoder_lstm')
     encoder_outputs, i_state_h, i_state_c = encoder_lstm(encoder_inputs)
@@ -122,7 +126,7 @@ def run():
 
     encoder_model = models.Model(encoder_inputs, encoder_state)
 
-    # decoder_inputs = model.get_layer('decoder_inputs')
+    # decoder_inputs = model.get_layer('decoder_inputs').input
     decoder_inputs = layers.Input(shape=(None, len(target_characters)), name='decoder_inputs')
     decoder_lstm = model.get_layer('decoder_lstm')
     decoder_dense = model.get_layer('decoder_dense')
