@@ -1,3 +1,7 @@
+"""
+对话-翻译-语料例子：http://www.manythings.org/anki/
+"""
+
 import os
 
 corpus_root_path = '/Users/zhoubb/projects/corpus'
@@ -5,7 +9,7 @@ corpus_root_path = '/Users/zhoubb/projects/corpus'
 news_jieba_path = os.path.join(corpus_root_path, 'news_fasttext_train_jieba.txt')
 chatbot100_path = os.path.join(corpus_root_path, 'chatbot100')
 xiaohuangji_path = os.path.join(corpus_root_path, 'xiaohuangji50w_fenciA.conv')
-xiaohuangji_model_path = os.path.join(corpus_root_path, 'xiaohuangji_lstm.h5')
+seq2seq_model_path = os.path.join(corpus_root_path, 'seq2seq.h5')
 
 wechat_new_word_data_path = os.path.join(corpus_root_path, 'wechat_new_word_data.txt')
 
@@ -27,3 +31,5 @@ wv_model_path = os.path.join(corpus_root_path, 'sgns.renmin.bigram-char')
 wv60_model_path = os.path.join(corpus_root_path, 'Word60.model')
 
 stop_path = os.path.join(corpus_root_path, 'stopwords.txt')
+
+chinese_to_english_path = os.path.join(corpus_root_path, 'cmn-eng/cmn.txt')

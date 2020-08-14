@@ -3,7 +3,7 @@ import jieba
 from keras import layers, models
 from keras import optimizers
 from keras.preprocessing.sequence import pad_sequences
-from corpus import xiaohuangji_model_path
+from corpus import seq2seq_model_path
 from corpus.load_corpus import LoadCorpus
 
 max_words = 15
@@ -16,8 +16,8 @@ epochs = 100
 
 
 def train():
-    # x, y = LoadCorpus.load_chatbot100_train()
-    x, y = LoadCorpus.load_xiaohuangji_train()
+    x, y = LoadCorpus.load_chatbot100_train()
+    # x, y = LoadCorpus.load_xiaohuangji_train()
     wv = LoadCorpus.load_wv60_model()
 
     def trans_seq(d):
@@ -44,7 +44,7 @@ def train():
     model = build_nn()
     model.compile(optimizer='adam', loss='mse', metrics=['accuracy'])
     model.fit([train_x, y_input], train_y, epochs=epochs, batch_size=batch_size)
-    model.save(xiaohuangji_model_path)
+    model.save(seq2seq_model_path)
 
 
 def build_nn():
@@ -99,6 +99,7 @@ def input_sentence_vector(sentence, word2vec_model):
 
 def vector_sentence(answer_sequence, word2vec_model):
     answer_list = [word2vec_model.most_similar([answer_sequence[i][0][0]])[0] for i in range(ty)]
+    print(answer_list)
     answer = ''
     for index, word_tuple in enumerate(answer_list):
         if word_tuple[1] > 0.75:
@@ -107,7 +108,7 @@ def vector_sentence(answer_sequence, word2vec_model):
 
 
 def predict():
-    model = models.load_model(xiaohuangji_model_path)
+    model = models.load_model(seq2seq_model_path)
     encoder_lstm = model.get_layer('encoder_lstm')
     decoder_lstm = model.get_layer('decoder_lstm')
     densor = model.get_layer('densor')
@@ -123,6 +124,6 @@ def predict():
 
 
 if __name__ == '__main__':
-    # predict()
+    predict()
     # train()
-    build_nn()
+    # build_nn()

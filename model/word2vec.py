@@ -1,5 +1,6 @@
 """
     网页链接：https://blog.csdn.net/a819825294/article/details/52438625
+    实现：https://blog.csdn.net/qq_34290470/article/details/102843763
 
     1、输入层：词的one-hot表示，2c个向量
     2、投影层：2c个向量做累加
