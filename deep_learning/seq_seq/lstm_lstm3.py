@@ -98,6 +98,15 @@ def run():
             if t > 0:
                 decoder_target_data[i, t - 1, target_token_index[char]] = 1.0
 
+    # 生成嵌入式向量
+    wv_model = LoadCorpus.load_wv_model()
+    embedding_matrix = np.zeros(shape=(len(input_token_index) + 1, 60))
+    for word, index in input_token_index.items():
+        try:
+            embedding_matrix[index] = wv_model[word]
+        except Exception as e:
+            pass
+
     # 编码器
     encoder_inputs = layers.Input(shape=(None, len(input_characters)), name='encoder_inputs')
     encoder_lstm = layers.LSTM(latent_dim, return_state=True, name='encoder_lstm')

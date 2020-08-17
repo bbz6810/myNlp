@@ -35,3 +35,5 @@ stop_path = os.path.join(corpus_root_path, 'stopwords.txt')
 
 chinese_to_english_path = os.path.join(corpus_root_path, 'cmn-eng/cmn.txt')
 french_to_english_path = os.path.join(corpus_root_path, 'fra-eng/fra.txt')
+
+crf_model_path = os.path.join(corpus_root_path, 'crf_model.h5')
