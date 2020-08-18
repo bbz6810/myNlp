@@ -68,7 +68,7 @@ def load_data():
     vocab = [w for w, v in wordcount.items() if v >= 2]
 
     crf_param.set_embedding_dim(60)
-    crf_param.set_vocab_size(len(wordcount))
+    crf_param.set_vocab_size(len(vocab))
 
     train = _process_data(train, vocab, chunk_tags)
     test = _process_data(test, vocab, chunk_tags)
@@ -86,12 +86,14 @@ class CRFKeras:
             layers.Embedding(self.nn_param.vocab_size + 1, self.nn_param.embedding_dim,
                              mask_zero=True))
         model.add(layers.Bidirectional(
-            layers.LSTM(self.nn_param.vocab_size // 2, return_sequences=True, kernel_initializer=he_normal(1),
-                        bias_initializer=he_normal(2))))
+            layers.LSTM(self.nn_param.embedding_dim // 2, return_sequences=True,
+                        weights=[embedding_matrix], kernel_initializer=he_normal(1),
+                        bias_initializer=he_normal(2), kernel_regularizer='l2')))
         crf = CRF(len(chunk_tags), sparse_target=True)
         model.add(crf)
         print(model.summary())
         model.compile(optimizer='adam', loss=crf.loss_function, metrics=[crf.accuracy])
+        # model.compile(optimizer='rmsprop', loss=crf.loss_function, metrics=[crf.accuracy])
         return model
 
     def create_matrix(self, vocab):
@@ -110,7 +112,7 @@ class CRFKeras:
         embedding_matrix = self.create_matrix(vocab=d_vocab)
         model = self.build_model(embedding_matrix)
         if train:
-            model.fit(train_x, train_y, batch_size=64, epochs=10, validation_data=[test_x, test_y])
+            model.fit(train_x, train_y, batch_size=32, epochs=10, validation_data=[test_x, test_y])
             model.save(crf_model_path)
         else:
             model.load_weights(crf_model_path)

@@ -4,13 +4,23 @@ import random
 
 from gensim.models import KeyedVectors, word2vec
 
-from corpus import wv_model_path, news_jieba_path, chatbot100_path, wv60_model_path, xiaohuangji_path
+from corpus import wv_model_path, news_jieba_path, chatbot100_path, wv60_model_path, xiaohuangji_path, paper_path
 from tools import n_gram, running_of_time
 
 
 class LoadCorpus:
     def __init__(self):
         pass
+
+    @classmethod
+    def load_paper_to_word2vec(cls):
+        data_list = []
+        with open(paper_path, encoding='gb2312', mode='r', errors='ignore') as f:
+            for line in f.readlines():
+                t = list(map(lambda x: x.split('/')[0], line.split()[1:]))
+                if t:
+                    data_list.append(t)
+        return data_list
 
     @classmethod
     def load_chatbot100_train(cls):

@@ -37,3 +37,4 @@ chinese_to_english_path = os.path.join(corpus_root_path, 'cmn-eng/cmn.txt')
 french_to_english_path = os.path.join(corpus_root_path, 'fra-eng/fra.txt')
 
 crf_model_path = os.path.join(corpus_root_path, 'crf_model.h5')
+word2vec_model_path = os.path.join(corpus_root_path, 'word2vec_model')

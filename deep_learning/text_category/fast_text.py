@@ -14,7 +14,8 @@ class FastText(NN):
     def model(self, embedding_matrix):
         model = models.Sequential()
         model.add(layers.Embedding(self.nn_param.vocab_size + 1, self.nn_param.embedding_dim,
-                                   input_length=self.nn_param.max_words, weights=[embedding_matrix]))
+                                   input_length=self.nn_param.max_words))
+                                   # input_length=self.nn_param.max_words, weights=[embedding_matrix]))
         model.add(layers.GlobalAveragePooling1D())
         if self.nn_param.class_num == 2:
             model.add(layers.Dense(1, activation='sigmoid'))
