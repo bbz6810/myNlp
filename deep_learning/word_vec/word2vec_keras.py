@@ -1,11 +1,14 @@
+# 流程图 https://blog.csdn.net/qq_34862636/article/details/103834058
+
 import marshal
 import gzip
 import numpy as np
 from keras import models, layers
 import keras.backend as K
+from keras.utils import plot_model
 
 from corpus.load_corpus import LoadCorpus
-from corpus import word2vec_model_path
+from corpus import word2vec_model_path, corpus_root_path
 
 word_size = 128  # 词向量大小
 window = 5  # 窗口大小
@@ -95,7 +98,7 @@ class Word2Vector:
     def train(self):
         x, y = self.pre_data()
         model = self.build_model()
-        model.fit([x, y], np.zeros(shape=(len(x), 1)), batch_size=64, epochs=3, validation_split=0.2)
+        model.fit([x, y], np.zeros(shape=(len(x), 1)), batch_size=64, epochs=2, validation_split=0.2)
         self.wv = model.get_weights()[0]
         self.wv = self.wv / (self.wv ** 2).sum(axis=1).reshape((-1, 1)) ** 0.5
         self.save(word2vec_model_path, model.get_weights()[0])
@@ -152,11 +155,16 @@ class Word2Vector:
         self.word2id = d['word2id']
         self.wv = np.load(fname_2)
 
+    def view_model(self):
+        model = self.build_model()
+        plot_model(model, to_file=corpus_root_path + '/word2vec.model.png')
+
 
 if __name__ == '__main__':
     word2vec = Word2Vector()
     word2vec.train()
-    a = word2vec.most_similarity('中国')
-    print(a)
-    # b = word2vec.sim('中国', '华人')
+    # word2vec.view_model()
+    # a = word2vec.most_similarity('男')
+    # print(a)
+    # b = word2vec.sim('男', '女')
     # print(b)
