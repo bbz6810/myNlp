@@ -98,7 +98,7 @@ class Word2Vector:
     def train(self):
         x, y = self.pre_data()
         model = self.build_model()
-        model.fit([x, y], np.zeros(shape=(len(x), 1)), batch_size=64, epochs=2, validation_split=0.2)
+        model.fit([x, y], np.zeros(shape=(len(x), 1)), batch_size=1024, epochs=10, validation_split=0.2)
         self.wv = model.get_weights()[0]
         self.wv = self.wv / (self.wv ** 2).sum(axis=1).reshape((-1, 1)) ** 0.5
         self.save(word2vec_model_path, model.get_weights()[0])
@@ -164,7 +164,7 @@ if __name__ == '__main__':
     word2vec = Word2Vector()
     word2vec.train()
     # word2vec.view_model()
-    # a = word2vec.most_similarity('男')
-    # print(a)
-    # b = word2vec.sim('男', '女')
-    # print(b)
+    a = word2vec.most_similarity('男')
+    print(a)
+    b = word2vec.sim('男', '女')
+    print(b)

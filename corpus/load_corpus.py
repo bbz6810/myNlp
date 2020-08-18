@@ -20,7 +20,7 @@ class LoadCorpus:
                 t = list(map(lambda x: x.split('/')[0], line.split()[1:]))
                 if t:
                     data_list.append(t)
-        return data_list
+        return data_list[:5000]
 
     @classmethod
     def load_chatbot100_train(cls):
