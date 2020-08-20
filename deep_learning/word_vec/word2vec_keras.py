@@ -6,7 +6,7 @@ import numpy as np
 from keras import models, layers
 import keras.backend as K
 from keras.utils import plot_model
-from keras.callbacks import EarlyStopping
+from keras.callbacks import ModelCheckpoint
 
 from corpus.load_corpus import LoadCorpus
 from corpus import word2vec_model_path, corpus_root_path
@@ -103,7 +103,9 @@ class Word2Vector:
     def train(self):
         x, y = self.pre_data()
         model = self.build_model()
-        model.fit([x, y], np.zeros(shape=(len(x), 1)), batch_size=64, epochs=2, validation_split=0.2)
+        checkpoint = ModelCheckpoint(filepath=word2vec_model_path, save_best_only=True)
+        model.fit([x, y], np.zeros(shape=(len(x), 1)), batch_size=64, epochs=3, validation_split=0.2,
+                  callbacks=[checkpoint])
         self.wv = model.get_weights()[0]
         self.wv = self.wv / (self.wv ** 2).sum(axis=1).reshape((-1, 1)) ** 0.5
         self.save(word2vec_model_path, model.get_weights()[0])

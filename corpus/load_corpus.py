@@ -101,7 +101,7 @@ class LoadCorpus:
 
         random.shuffle(load_labels)
         load_label = load_labels[:c]
-        load_label = ['edu']
+        # load_label = ['edu']
         print('随机取{}个标签为:{}'.format(c if c < len(load_labels) else len(load_labels), load_label))
 
         train_x = []

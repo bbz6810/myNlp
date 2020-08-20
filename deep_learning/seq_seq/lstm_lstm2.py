@@ -13,15 +13,16 @@ decoder_target_data 与 decoder_input_data 相同，但是有一个时间的偏�
 import numpy as np
 from sklearn.model_selection import train_test_split
 from keras import layers, models
+from keras.callbacks import ModelCheckpoint
 
 from corpus import chinese_to_english_path, french_to_english_path, seq2seq2_model_path
 from tools.chinese_trans.langconv import cht_to_chs
 from corpus.load_corpus import LoadCorpus
 
-batch_size = 1024
-epochs = 3
+batch_size = 32
+epochs = 10
 latent_dim = 256
-samples = 100
+samples = 10000
 
 
 def load_seq(maxlen):
@@ -95,24 +96,26 @@ def run():
                 decoder_target_data[i, t - 1, target_token_index[char]] = 1.0
 
     # 训练模型
-    # # 编码器 = 输入层 + LSTM层
-    # encoder_inputs = layers.Input(shape=(None, len(input_characters)), name='encoder_inputs')
-    # encoder_lstm = layers.LSTM(latent_dim, return_state=True, name='encoder_lstm')
-    # encoder_outputs, state_h, state_c = encoder_lstm(encoder_inputs)
-    # encoder_state = [state_h, state_c]
-    #
-    # # 解码器 = 输出层 + LSTM层 + Dense层
-    # decoder_inputs = layers.Input(shape=(None, len(target_characters)), name='decoder_inputs')
-    # decoder_lstm = layers.LSTM(latent_dim, return_state=True, return_sequences=True, name='decoder_lstm')
-    # decoder_outputs, _, _ = decoder_lstm(decoder_inputs, initial_state=encoder_state)
-    # decoder_dense = layers.Dense(len(target_characters), activation='softmax', name='decoder_dense')
-    # decoder_outputs = decoder_dense(decoder_outputs)
-    #
-    # model = models.Model(inputs=[encoder_inputs, decoder_inputs], outputs=decoder_outputs)
-    # model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
-    # model.fit(x=[encoder_input_data, decoder_input_data], y=decoder_target_data, batch_size=batch_size, epochs=epochs,
-    #           validation_split=0.2)
-    # model.save(seq2seq2_model_path)
+    # 编码器 = 输入层 + LSTM层
+    encoder_inputs = layers.Input(shape=(None, len(input_characters)), name='encoder_inputs')
+    encoder_lstm = layers.LSTM(latent_dim, return_state=True, name='encoder_lstm')
+    encoder_outputs, state_h, state_c = encoder_lstm(encoder_inputs)
+    encoder_state = [state_h, state_c]
+
+    # 解码器 = 输出层 + LSTM层 + Dense层
+    decoder_inputs = layers.Input(shape=(None, len(target_characters)), name='decoder_inputs')
+    decoder_lstm = layers.LSTM(latent_dim, return_state=True, return_sequences=True, name='decoder_lstm')
+    decoder_outputs, _, _ = decoder_lstm(decoder_inputs, initial_state=encoder_state)
+    decoder_dense = layers.Dense(len(target_characters), activation='softmax', name='decoder_dense')
+    decoder_outputs = decoder_dense(decoder_outputs)
+
+    checkpoint = ModelCheckpoint(filepath=seq2seq2_model_path, save_best_only=True)
+
+    model = models.Model(inputs=[encoder_inputs, decoder_inputs], outputs=decoder_outputs)
+    model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
+    model.fit(x=[encoder_input_data, decoder_input_data], y=decoder_target_data, batch_size=batch_size, epochs=epochs,
+              validation_split=0.2, callbacks=[checkpoint])
+    model.save(seq2seq2_model_path)
 
     # 预测模型
     model = models.load_model(seq2seq2_model_path)
@@ -168,7 +171,7 @@ def run():
     for seq_index in range(samples):
         input_seq = encoder_input_data[seq_index:seq_index + 1]
         decoded_sentence = decode_sequence(input_seq)
-        # print('输入序列', x[seq_index].strip(), '输出序列', y[seq_index].strip(), '预测序列', decoded_sentence)
+        print('输入序列', x[seq_index].strip(), '输出序列', y[seq_index].strip(), '预测序列', decoded_sentence)
         if y[seq_index].strip() == decoded_sentence.strip():
             c += 1
     print('正确个数', c, '正确率', c / samples)
