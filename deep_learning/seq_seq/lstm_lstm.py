@@ -64,8 +64,8 @@ def build_nn():
 
 
 def predict_model(encoder_layer, decoder_layer, time_densor, word_dim, ty):
-    x0 = layers.Input(shape=(None, word_dim), name='sentence_input')
-    _, state_h, state_c = encoder_layer(x0)
+    encode_input = layers.Input(shape=(None, word_dim), name='sentence_input')
+    _, state_h, state_c = encoder_layer(encode_input)
     decoder_state_inputs = [state_h, state_c]
 
     decoder_input = layers.Input(shape=(1, word_dim), name='decoder_initial_input')
@@ -78,7 +78,7 @@ def predict_model(encoder_layer, decoder_layer, time_densor, word_dim, ty):
         x = output
         outputs.append(output)
 
-    model = models.Model(input=[x0, decoder_input], outputs=outputs)
+    model = models.Model(input=[encode_input, decoder_input], outputs=outputs)
     return model
 
 

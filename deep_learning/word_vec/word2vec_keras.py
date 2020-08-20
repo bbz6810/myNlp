@@ -6,6 +6,7 @@ import numpy as np
 from keras import models, layers
 import keras.backend as K
 from keras.utils import plot_model
+from keras.callbacks import EarlyStopping
 
 from corpus.load_corpus import LoadCorpus
 from corpus import word2vec_model_path, corpus_root_path
@@ -33,7 +34,11 @@ class Word2Vector:
     def pre_data(self):
         words = dict()
         nb_sentence, total = 0, 0
-        sentences = LoadCorpus.load_paper_to_word2vec()
+
+        x, y = LoadCorpus.load_news_train(c=15)
+        sentences = [i.split() for i in x]
+
+        # sentences = LoadCorpus.load_paper_to_word2vec()
 
         for sentence in sentences:
             nb_sentence += 1
@@ -98,7 +103,7 @@ class Word2Vector:
     def train(self):
         x, y = self.pre_data()
         model = self.build_model()
-        model.fit([x, y], np.zeros(shape=(len(x), 1)), batch_size=1024, epochs=10, validation_split=0.2)
+        model.fit([x, y], np.zeros(shape=(len(x), 1)), batch_size=64, epochs=2, validation_split=0.2)
         self.wv = model.get_weights()[0]
         self.wv = self.wv / (self.wv ** 2).sum(axis=1).reshape((-1, 1)) ** 0.5
         self.save(word2vec_model_path, model.get_weights()[0])
@@ -163,8 +168,13 @@ class Word2Vector:
 if __name__ == '__main__':
     word2vec = Word2Vector()
     word2vec.train()
-    # word2vec.view_model()
-    a = word2vec.most_similarity('男')
-    print(a)
-    b = word2vec.sim('男', '女')
-    print(b)
+    # a = word2vec.most_similarity('计算机')
+    # print(a)
+    # b = word2vec.sim('大学', '大学生')
+    # print(b)
+    # c = word2vec.sim('中学', '高中生')
+    # print(c)
+    """
+    [('其琛', 2.6729832), ('国王', 2.3634777), ('会见', 2.1513238), ('钱', 1.8646832), ('李', 1.8416243), ('招待会', 1.6489117), ('外交部长', 1.6423645), ('转达', 1.6187466), ('鹏', 1.5184245), ('泽民', 1.4916761)]
+0.10482322
+0.1384881"""

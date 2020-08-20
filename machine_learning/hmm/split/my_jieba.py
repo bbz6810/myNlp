@@ -7,9 +7,9 @@ import json
 import math
 import re
 
-from machine_learning.split.myJieba.trans import P as trans
-from machine_learning.split.myJieba import P as start
-from machine_learning.split.myJieba.emit import P as emit
+from machine_learning.hmm.split import P as trans
+from machine_learning.hmm.split.start import P as start
+from machine_learning.hmm.split import P as emit
 
 source_text = 'D:\code\coupurs\cut\paper_199801.txt'
 

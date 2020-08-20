@@ -5,7 +5,7 @@ import random
 from gensim.models import KeyedVectors, word2vec
 
 from corpus import wv_model_path, news_jieba_path, chatbot100_path, wv60_model_path, xiaohuangji_path, paper_path
-from tools import n_gram, running_of_time
+from tools import n_gram, running_of_time, delete_punctuation
 
 
 class LoadCorpus:
@@ -18,9 +18,11 @@ class LoadCorpus:
         with open(paper_path, encoding='gb2312', mode='r', errors='ignore') as f:
             for line in f.readlines():
                 t = list(map(lambda x: x.split('/')[0], line.split()[1:]))
+                # 去除标点符号
+                t = [delete_punctuation(i) for i in t if delete_punctuation(i)]
                 if t:
                     data_list.append(t)
-        return data_list[:5000]
+        return data_list
 
     @classmethod
     def load_chatbot100_train(cls):
@@ -99,7 +101,8 @@ class LoadCorpus:
 
         random.shuffle(load_labels)
         load_label = load_labels[:c]
-        print('随机取{}个标签为:{}'.format(c, load_label))
+        # load_label = ['edu']
+        print('随机取{}个标签为:{}'.format(c if c < len(load_labels) else len(load_labels), load_label))
 
         train_x = []
         train_y = []
@@ -140,4 +143,4 @@ class LoadCorpus:
 
 
 if __name__ == '__main__':
-    LoadCorpus.load_xiaohuangji_train()
+    LoadCorpus.load_paper_to_word2vec()
