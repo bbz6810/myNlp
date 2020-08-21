@@ -13,9 +13,10 @@ from tools.chinese_trans.langconv import cht_to_chs
 from corpus.load_corpus import LoadCorpus
 
 batch_size = 32
-epochs = 3
+epochs = 10
+embedding_dim = 64
 latent_dim = 256
-samples = 10000
+samples = 1000000
 input_max_len = 20
 output_max_len = 20
 
@@ -118,7 +119,7 @@ class Word2Word:
     def build_model(self):
         # 编码器 = 输入层 + LSTM层
         encoder_inputs = layers.Input(shape=(None,), name='encoder_inputs')
-        encoder_embedding = layers.Embedding(input_dim=self.len_input_characters, output_dim=latent_dim,
+        encoder_embedding = layers.Embedding(input_dim=self.len_input_characters, output_dim=embedding_dim,
                                              input_length=self.max_input_seq_length, name='encoder_embedding')
         encoder_lstm = layers.LSTM(latent_dim, return_state=True, kernel_initializer=he_normal(1), name='encoder_lstm')
         encoder_outputs, state_h, state_c = encoder_lstm(encoder_embedding(encoder_inputs))
