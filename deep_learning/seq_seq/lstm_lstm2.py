@@ -9,13 +9,14 @@ decoder_target_data 与 decoder_input_data 相同，但是有一个时间的偏�
 训练一个基于LSTM的Seq2Seq模型，在给定 encoder_input_data和decoder_input_data时，预测 decoder_target_data，我们的模型利用了teacher forcing
 解码一些语言用来验证模型事有效的
 """
-
+import json
 import numpy as np
 from sklearn.model_selection import train_test_split
 from keras import layers, models
 from keras.callbacks import ModelCheckpoint
+import keras.backend as K
 
-from corpus import chinese_to_english_path, french_to_english_path, seq2seq2_model_path
+from corpus import chinese_to_english_path, french_to_english_path, seq2seq2_model_path, eng2eng_obj_path
 from tools.chinese_trans.langconv import cht_to_chs
 from corpus.load_corpus import LoadCorpus
 
@@ -24,16 +25,9 @@ epochs = 10
 latent_dim = 256
 samples = 10000
 
-
-def load_seq(maxlen):
-    x, y = [], []
-    with open(chinese_to_english_path, 'r', encoding='utf-8') as f:
-        for line in f.readlines():
-            line = line.strip().split('\t')
-            x.append(line[0])
-            y.append('\t' + cht_to_chs(line[1]) + '\n')
-    print('对话语料大小', len(x))
-    return x[:maxlen], y[:maxlen]
+save_params = ['input_char_index', 'output_char_index', 'max_input_seq_length', 'max_output_seq_length',
+               'len_input_characters', 'len_output_characters']
+save_np_params = ['encoder_input_data', 'decoder_input_data', 'decoder_output_data']
 
 
 def load_seq2(maxlen):
@@ -47,136 +41,180 @@ def load_seq2(maxlen):
     return x[:maxlen], y[:maxlen]
 
 
-def load_seq3(maxlen):
-    # x, y = LoadCorpus.load_chatbot100_train()
-    x, y = LoadCorpus.load_xiaohuangji_train()
-    x = [''.join(s.split()) for s in x]
-    y = [''.join(s.split()) for s in y]
-    y = ['\t' + s + '\n' for s in y]
-    return x[:maxlen], y[:maxlen]
+class Eng2Eng:
+    def __init__(self, samples=10000):
+        self.samples = samples
 
+        self.encoder_input_data = None
+        self.decoder_input_data = None
+        self.decoder_output_data = None
 
-input_characters = set()
-target_characters = set()
+        self.max_input_seq_length = 0
+        self.max_output_seq_length = 0
 
+        self.len_input_characters = 0
+        self.len_output_characters = 0
 
-def run():
-    x, y = load_seq2(samples)
-    for _x, _y in zip(x, y):
-        for cx in _x:
-            input_characters.add(cx)
-        for cy in _y:
-            target_characters.add(cy)
+        self.input_char_index = None
+        self.output_char_index = None
 
-    max_input_seq_length = max(len(t) for t in x)
-    max_output_seq_length = max(len(t) for t in y)
+        self.encoder_model = None
+        self.decoder_model = None
 
-    print('输入字符集', len(input_characters))
-    print('输出字符集', len(target_characters))
-    print('输入字符串最大长度', max_input_seq_length)
-    print('输出字符串最大长度', max_output_seq_length)
+    def prepare_data(self):
+        input_characters = set()
+        target_characters = set()
 
-    input_token_index = {char: i for i, char in enumerate(sorted(list(input_characters)))}
-    target_token_index = {char: i for i, char in enumerate(sorted(list(target_characters)))}
+        x, y = load_seq2(self.samples)
+        for _x, _y in zip(x, y):
+            for cx in _x:
+                input_characters.add(cx)
+            for cy in _y:
+                target_characters.add(cy)
 
-    encoder_input_data = np.zeros(shape=(len(x), max_input_seq_length, len(input_characters)), dtype='float32')
-    decoder_input_data = np.zeros(shape=(len(x), max_output_seq_length, len(target_characters)), dtype='float32')
-    decoder_target_data = np.zeros(shape=(len(x), max_output_seq_length, len(target_characters)), dtype='float32')
+        self.max_input_seq_length = max(len(t) for t in x)
+        self.max_output_seq_length = max(len(t) for t in y)
 
-    print('encoder_input_data.shape', encoder_input_data.shape)
-    print('decoder_input_data.shape', decoder_input_data.shape)
-    print('decoder_target_data.shape', decoder_target_data.shape)
+        self.len_input_characters = len(input_characters)
+        self.len_output_characters = len(target_characters)
 
-    for i, (input_text, target_text) in enumerate(zip(x, y)):
-        for t, char in enumerate(input_text):
-            encoder_input_data[i, t, input_token_index[char]] = 1.0
-        for t, char in enumerate(target_text):
-            decoder_input_data[i, t, target_token_index[char]] = 1.0
-            if t > 0:
-                decoder_target_data[i, t - 1, target_token_index[char]] = 1.0
+        print('输入字符集长度', self.len_input_characters)
+        print('输出字符集长度', self.len_output_characters)
+        print('输入字符串最大长度', self.max_input_seq_length)
+        print('输出字符串最大长度', self.max_output_seq_length)
 
-    # 训练模型
-    # 编码器 = 输入层 + LSTM层
-    encoder_inputs = layers.Input(shape=(None, len(input_characters)), name='encoder_inputs')
-    encoder_lstm = layers.LSTM(latent_dim, return_state=True, name='encoder_lstm')
-    encoder_outputs, state_h, state_c = encoder_lstm(encoder_inputs)
-    encoder_state = [state_h, state_c]
+        self.input_char_index = {char: i for i, char in enumerate(sorted(list(input_characters)))}
+        self.output_char_index = {char: i for i, char in enumerate(sorted(list(target_characters)))}
 
-    # 解码器 = 输出层 + LSTM层 + Dense层
-    decoder_inputs = layers.Input(shape=(None, len(target_characters)), name='decoder_inputs')
-    decoder_lstm = layers.LSTM(latent_dim, return_state=True, return_sequences=True, name='decoder_lstm')
-    decoder_outputs, _, _ = decoder_lstm(decoder_inputs, initial_state=encoder_state)
-    decoder_dense = layers.Dense(len(target_characters), activation='softmax', name='decoder_dense')
-    decoder_outputs = decoder_dense(decoder_outputs)
+        self.encoder_input_data = np.zeros(shape=(len(x), self.max_input_seq_length, self.len_input_characters),
+                                           dtype='float32')
+        self.decoder_input_data = np.zeros(shape=(len(x), self.max_output_seq_length, self.len_output_characters),
+                                           dtype='float32')
+        self.decoder_output_data = np.zeros(shape=(len(x), self.max_output_seq_length, self.len_output_characters),
+                                            dtype='float32')
 
-    checkpoint = ModelCheckpoint(filepath=seq2seq2_model_path, save_best_only=True)
+        print('编码后输入数据形状.shape', self.encoder_input_data.shape)
+        print('解码后输入数据形状.shape', self.decoder_input_data.shape)
+        print('解码后输出数据形状.shape', self.decoder_output_data.shape)
 
-    model = models.Model(inputs=[encoder_inputs, decoder_inputs], outputs=decoder_outputs)
-    model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
-    model.fit(x=[encoder_input_data, decoder_input_data], y=decoder_target_data, batch_size=batch_size, epochs=epochs,
-              validation_split=0.2, callbacks=[checkpoint])
-    model.save(seq2seq2_model_path)
+        for i, (input_text, target_text) in enumerate(zip(x, y)):
+            for t, char in enumerate(input_text):
+                self.encoder_input_data[i, t, self.input_char_index[char]] = 1.0
+            for t, char in enumerate(target_text):
+                self.decoder_input_data[i, t, self.output_char_index[char]] = 1.0
+                if t > 0:
+                    self.decoder_output_data[i, t - 1, self.output_char_index[char]] = 1.0
 
-    # 预测模型
-    model = models.load_model(seq2seq2_model_path)
-    encoder_inputs = model.get_layer('encoder_inputs').input
-    encoder_lstm = model.get_layer('encoder_lstm')
-    encoder_outputs, i_state_h, i_state_c = encoder_lstm(encoder_inputs)
-    encoder_state = [i_state_h, i_state_c]
-    encoder_model = models.Model(encoder_inputs, encoder_state)
+    def build_model(self):
+        # 编码器 = 输入层 + LSTM层
+        encoder_inputs = layers.Input(shape=(None, self.len_input_characters), name='encoder_inputs')
+        encoder_lstm = layers.LSTM(latent_dim, return_state=True, name='encoder_lstm')
+        encoder_outputs, state_h, state_c = encoder_lstm(encoder_inputs)
+        encoder_state = [state_h, state_c]
 
-    decoder_inputs = model.get_layer('decoder_inputs').input
-    decoder_lstm = model.get_layer('decoder_lstm')
-    decoder_dense = model.get_layer('decoder_dense')
+        # 解码器 = 输出层 + LSTM层 + Dense层
+        decoder_inputs = layers.Input(shape=(None, self.len_output_characters), name='decoder_inputs')
+        decoder_lstm = layers.LSTM(latent_dim, return_state=True, return_sequences=True, name='decoder_lstm')
+        decoder_outputs, _, _ = decoder_lstm(decoder_inputs, initial_state=encoder_state)
+        decoder_dense = layers.Dense(self.len_output_characters, activation='softmax', name='decoder_dense')
+        decoder_outputs = decoder_dense(decoder_outputs)
 
-    decoder_state_input_h = layers.Input(shape=(latent_dim,))
-    decoder_state_input_c = layers.Input(shape=(latent_dim,))
-    decoder_states_inputs = [decoder_state_input_h, decoder_state_input_c]
+        model = models.Model(inputs=[encoder_inputs, decoder_inputs], outputs=decoder_outputs)
+        model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
+        print(model.summary())
+        return model
 
-    decoder_outputs, state_h, state_c = decoder_lstm(decoder_inputs, initial_state=decoder_states_inputs)
-    decoder_states = [state_h, state_c]
-    decoder_outputs = decoder_dense(decoder_outputs)
-    decoder_model = models.Model([decoder_inputs] + decoder_states_inputs, [decoder_outputs] + decoder_states)
+    def train(self):
+        self.prepare_data()
+        model = self.build_model()
+        checkpoint = ModelCheckpoint(filepath=seq2seq2_model_path, save_best_only=True)
+        model.fit(x=[self.encoder_input_data, self.decoder_input_data], y=self.decoder_output_data,
+                  batch_size=batch_size, epochs=epochs, validation_split=0.2, callbacks=[checkpoint])
+        self.save(model, seq2seq2_model_path, eng2eng_obj_path)
 
-    reverse_input_char_index = {i: char for char, i in input_token_index.items()}
-    reverse_target_char_index = {i: char for char, i in target_token_index.items()}
+    def load_model(self, seq2seq_model_path):
+        model = models.load_model(seq2seq_model_path)
+        encoder_inputs = model.get_layer('encoder_inputs').input
+        encoder_lstm = model.get_layer('encoder_lstm')
+        encoder_outputs, i_state_h, i_state_c = encoder_lstm(encoder_inputs)
+        encoder_state = [i_state_h, i_state_c]
+        self.encoder_model = models.Model(encoder_inputs, encoder_state)
 
-    def decode_sequence(input_seq):
-        states_value = encoder_model.predict([input_seq])
+        decoder_inputs = model.get_layer('decoder_inputs').input
+        decoder_lstm = model.get_layer('decoder_lstm')
+        decoder_dense = model.get_layer('decoder_dense')
 
-        target_seq = np.zeros(shape=(1, 1, len(target_characters)))
-        target_seq[0, 0, target_token_index['\t']] = 1.
+        decoder_state_input_h = layers.Input(shape=(latent_dim,))
+        decoder_state_input_c = layers.Input(shape=(latent_dim,))
+        decoder_states_inputs = [decoder_state_input_h, decoder_state_input_c]
+
+        decoder_outputs, state_h, state_c = decoder_lstm(decoder_inputs, initial_state=decoder_states_inputs)
+        decoder_states = [state_h, state_c]
+        decoder_outputs = decoder_dense(decoder_outputs)
+        self.decoder_model = models.Model([decoder_inputs] + decoder_states_inputs, [decoder_outputs] + decoder_states)
+
+    def save(self, model, model_path, obj_save_path):
+        model.save(model_path)
+
+        d = {}
+        for param in save_params:
+            print(param)
+            d[param] = getattr(self, param)
+        json.dump(d, open(obj_save_path, mode='w'))
+
+        for param in save_np_params:
+            np.save('{}_{}'.format(obj_save_path, param), getattr(self, param))
+
+    def load(self, model_path, obj_save_path):
+        self.load_model(model_path)
+        d = json.load(open(obj_save_path, mode='r'))
+        for param in save_params:
+            setattr(self, param, d[param])
+        for param in save_np_params:
+            setattr(self, param, np.load('{}_{}.npy'.format(obj_save_path, param)))
+
+    def predict(self):
+        def input_sentence_vector(self, sentence):
+            input_vector = np.zeros(shape=(1, self.max_input_seq_length, self.len_input_characters))
+            for index, char in enumerate(sentence):
+                input_vector[0, index, self.input_char_index[char]] = 1.0
+            decoded_sentence = self.decode_sequence(input_vector, reverse_target_char_index)
+            return decoded_sentence
+
+        self.load(seq2seq2_model_path, eng2eng_obj_path)
+        reverse_target_char_index = {i: char for char, i in self.output_char_index.items()}
+        while True:
+            sentence = input('question:')
+            retv = input_sentence_vector(self, sentence)
+            print('answer:', retv)
+
+    def decode_sequence(self, input_seq, reverse_target_char_index):
+        states_value = self.encoder_model.predict(input_seq)
+        # print('states value', states_value)
+        target_seq = np.zeros(shape=(1, 1, self.len_output_characters))
+        target_seq[0, 0, self.output_char_index['\t']] = 1.
 
         stop = False
         decoded_sentence = ''
 
         while not stop:
-            output_tokens, h, c = decoder_model.predict([target_seq] + states_value)
+            output_tokens, h, c = self.decoder_model.predict([target_seq] + states_value)
 
             sampled_token_index = np.argmax(output_tokens[0, -1, :])
             sampled_char = reverse_target_char_index[sampled_token_index]
             decoded_sentence += sampled_char
 
-            if sampled_char == '\n' or len(decoded_sentence) > max_output_seq_length:
+            if sampled_char == '\n' or len(decoded_sentence) > self.max_output_seq_length:
                 stop = True
 
-            target_seq = np.zeros(shape=(1, 1, len(target_characters)))
+            target_seq = np.zeros(shape=(1, 1, self.len_output_characters))
             target_seq[0, 0, sampled_token_index] = 1.
 
             states_value = [h, c]
         return decoded_sentence
 
-    c = 0
-
-    for seq_index in range(samples):
-        input_seq = encoder_input_data[seq_index:seq_index + 1]
-        decoded_sentence = decode_sequence(input_seq)
-        print('输入序列', x[seq_index].strip(), '输出序列', y[seq_index].strip(), '预测序列', decoded_sentence)
-        if y[seq_index].strip() == decoded_sentence.strip():
-            c += 1
-    print('正确个数', c, '正确率', c / samples)
-
 
 if __name__ == '__main__':
-    run()
-    # load_seq3(1)
+    eng = Eng2Eng()
+    # eng.train()
+    eng.predict()
