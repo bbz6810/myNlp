@@ -16,7 +16,7 @@ batch_size = 32
 epochs = 10
 embedding_dim = 64
 latent_dim = 256
-samples = 1000000
+samples = 1000
 input_max_len = 20
 output_max_len = 20
 
@@ -240,5 +240,5 @@ class Word2Word:
 if __name__ == '__main__':
     # load_cha_cha(1)
     eng = Word2Word()
-    eng.train()
-    # eng.predict()
+    # eng.train()
+    eng.predict()
