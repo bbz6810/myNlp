@@ -1,9 +1,9 @@
 from keras import models, layers
 
-from deep_learning.nn import NN
+from deep_learning.nn_param import NN
 from deep_learning.data_pretreatment import Pretreatment
 
-batch_size = 64
+batch_size = 32
 epochs = 5
 
 
@@ -29,6 +29,9 @@ class FastText(NN):
     def train(self, train_x, train_y, embedding_matrix):
         self.nn = self.model(embedding_matrix)
         self.nn.fit(train_x, train_y, epochs=epochs, batch_size=batch_size, validation_split=0.2)
+        weight = self.nn.get_weights()
+        for w in weight:
+            print(w.shape)
 
     def predict(self, test_x, test_y):
         _y = self.nn.predict(test_x)
@@ -39,10 +42,11 @@ class FastText(NN):
 
 def run():
     pretreatment = Pretreatment()
-    train_x, test_x, train_y, test_y = pretreatment.train_test_split(c=2, test_size=0.6)
-    embedding_matrix = pretreatment.create_embedding_matrix(20000)
+    train_x, test_x, train_y, test_y = pretreatment.train_test_split(c=20, test_size=0.6)
+    # embedding_matrix = pretreatment.create_embedding_matrix(30000)
     textrnn = FastText(pretreatment.nnparam)
-    textrnn.train(train_x, train_y, embedding_matrix)
+    # textrnn.train(train_x, train_y, embedding_matrix)  # 精度 0.9323043484250149 损失 0.270193725742771
+    textrnn.train(train_x, train_y, '')
     textrnn.predict(test_x, test_y)
 
 

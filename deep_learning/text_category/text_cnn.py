@@ -1,6 +1,6 @@
 from keras import models, layers
 
-from deep_learning.nn import NN
+from deep_learning.nn_param import NN
 from deep_learning.data_pretreatment import Pretreatment
 
 batch_size = 64
