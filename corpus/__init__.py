@@ -7,6 +7,7 @@ import os
 corpus_root_path = '/Users/zhoubb/projects/corpus'
 
 news_jieba_path = os.path.join(corpus_root_path, 'news_fasttext_train_jieba.txt')
+news_path = os.path.join(corpus_root_path, 'news_fasttext_train.txt')
 chatbot100_path = os.path.join(corpus_root_path, 'chatbot100')
 xiaohuangji_path = os.path.join(corpus_root_path, 'xiaohuangji50w_fenciA.conv')
 seq2seq_model_path = os.path.join(corpus_root_path, 'seq2seq.h5')
@@ -42,3 +43,10 @@ crf_model_path = os.path.join(corpus_root_path, 'crf_model.h5')
 word2vec_model_path = os.path.join(corpus_root_path, 'word2vec_model')
 
 cat_data = os.path.join(corpus_root_path, 'car.data')
+
+cws_model = os.path.join(corpus_root_path, 'ltp_data', "cws.model")
+pos_model = os.path.join(corpus_root_path, 'ltp_data', "pos.model")
+parser_model = os.path.join(corpus_root_path, 'ltp_data', "parser.model")
+ner_model = os.path.join(corpus_root_path, 'ltp_data', "ner.model")
+
+relation_extract_output_file = os.path.join(corpus_root_path, 'relation_extract_output.txt')

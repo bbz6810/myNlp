@@ -15,7 +15,7 @@ class FastText(NN):
         model = models.Sequential()
         model.add(layers.Embedding(self.nn_param.vocab_size + 1, self.nn_param.embedding_dim,
                                    input_length=self.nn_param.max_words))
-                                   # input_length=self.nn_param.max_words, weights=[embedding_matrix]))
+        # input_length=self.nn_param.max_words, weights=[embedding_matrix]))
         model.add(layers.GlobalAveragePooling1D())
         if self.nn_param.class_num == 2:
             model.add(layers.Dense(1, activation='sigmoid'))
@@ -46,7 +46,7 @@ def run():
     # embedding_matrix = pretreatment.create_embedding_matrix(30000)
     textrnn = FastText(pretreatment.nnparam)
     # textrnn.train(train_x, train_y, embedding_matrix)  # 精度 0.9323043484250149 损失 0.270193725742771
-    textrnn.train(train_x, train_y, '')
+    textrnn.train(train_x, train_y, '')  # 精度 0.9353858005601531 损失 0.2599002837189978
     textrnn.predict(test_x, test_y)
 
 
