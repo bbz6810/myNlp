@@ -22,10 +22,10 @@ def extract_start(input_file_name, output_file_name, begin_line, end_line):
     in_file = open(input_file_name, 'r', encoding='utf8')
     out_file = open(output_file_name, 'w')
 
-    for line in in_file.readlines()[begin_line:end_line]:
-        for sentence in sentencesplit.split(''.join(line.split()[:-1])):
-            fact_extract(sentence, out_file)
-    # fact_extract('欧几里得是西元前三世纪的希腊数学家。', out_file)
+    # for line in in_file.readlines()[begin_line:end_line]:
+    #     for sentence in sentencesplit.split(''.join(line.split()[:-1])):
+    #         fact_extract(sentence, out_file)
+    fact_extract('欧几里得是西元前三世纪的希腊数学家。', out_file)
 
     in_file.close()
     out_file.close()
@@ -35,9 +35,10 @@ def fact_extract(sentence, out_file):
     # print('sentence', sentence)
     # words = segmentor.segment(sentence)
     words = jieba.lcut(sentence)
-    # for word in words:
-    #     print(word, end=' ')
-    # print()
+    for word in words:
+        print(word, end=' ')
+    print(len(words))
+
     postags = postagger.postag(words)
     # for pos in postags:
     #     print(pos, end=' ')
@@ -49,9 +50,9 @@ def fact_extract(sentence, out_file):
     arcs = parser.parse(words, netage)
 
     relay_id = [arc.head for arc in arcs]
-    # print(relay_id)
+    print('提取依存父节点id', len(relay_id), relay_id)
     relation = [arc.relation for arc in arcs]
-    # print(relation)
+    print('提取依存关系', relation)
     heads = ['root' if idx == 0 else words[idx - 1] for idx in relay_id]
     # print(heads)
     # for i in range(len(words)):
@@ -142,4 +143,4 @@ def complete_e(words, postags, child_dict_list, word_index):
 
 
 if __name__ == '__main__':
-    extract_start(news_path, relation_extract_output_file, 0, 10)
+    extract_start(news_path, relation_extract_output_file, 0, 1)
