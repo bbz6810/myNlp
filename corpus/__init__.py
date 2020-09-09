@@ -53,5 +53,7 @@ relation_extract_output_file = os.path.join(corpus_root_path, 'relation_extract_
 
 # 天池比赛数据
 news_classifier_path = os.path.join(corpus_root_path, 'train_set.csv')
-news_test_path = os.path.join(corpus_root_path, 'test_a.csv')
+news_test_path = os.path.join(corpus_root_path, 'test_b.csv')
 news_one_to_one_path = os.path.join(corpus_root_path, 'one2one')
+daikuan_classifier_path = os.path.join(corpus_root_path, 'train.csv')
+daikuan_test_path = os.path.join(corpus_root_path, 'testA.csv')
