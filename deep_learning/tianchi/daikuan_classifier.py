@@ -231,30 +231,34 @@ class DaiKuan:
             score = lgbm.score(test_xx, test_yy)
             print('lgbm score', score)
         elif model == 'gbdt':
-            param_test1 = {'n_estimators': [100, 200]}
+            # 调参 https://blog.csdn.net/weixin_40924580/article/details/85043801
+            param_test1 = {'n_estimators': range(64, 256, 64)}
+            param_test2 = {'max_depth': range(3, 14, 2), 'min_samples_split': range(100, 801, 200)}
             g_search = GridSearchCV(estimator=GradientBoostingClassifier(learning_rate=0.1, min_samples_split=300,
-                                                                         min_samples_leaf=20, max_depth=8,
+                                                                         min_samples_leaf=20,
                                                                          max_features='sqrt', subsample=0.8,
-                                                                         random_state=10, verbose=1),
-                                    param_grid=param_test1, scoring='roc_auc', iid=False, cv=2, verbose=1)
-            g_search.fit(train_xx, train_yy.reshape(-1, ))
-            print(g_search.best_params_)
-            print(g_search.best_score_)
+                                                                         random_state=10, verbose=1,
+                                                                         n_estimators=128),
+                                    param_grid=param_test2, scoring='roc_auc', iid=False, cv=2, verbose=1)
+            # g_search.fit(train_xx, train_yy.reshape(-1, ))
+            # print(g_search.best_params_)
+            # print(g_search.best_score_)
 
             # gbdt = GradientBoostingRegressor(verbose=1)
-            # gbdt = GradientBoostingClassifier(verbose=1)
-            # gbdt.fit(train_xx, train_yy.reshape(-1, ))
+            gbdt = GradientBoostingClassifier(n_estimators=128, learning_rate=0.05, min_samples_split=1200,
+                                              min_samples_leaf=50, verbose=1)
+            gbdt.fit(train_xx, train_yy.reshape(-1, ))
 
             # gbdt = joblib.load(os.path.join(daikuan_path, 'gbdt_model_time_1599825531_score_0.6515666666666666'))
-            #
-            # y_pred = gbdt.predict(test_xx)
-            # y_predprob = gbdt.predict_proba(test_xx)[:, 1]
-            # print('accuracy', metrics.accuracy_score(test_yy, y_pred))
-            # print('AUC', metrics.roc_auc_score(test_yy, y_predprob))
 
-            # score = gbdt.score(test_xx, test_yy)
-            # joblib.dump(gbdt, os.path.join(daikuan_path, 'gbdt_model_time_{}_score_{}'.format(int(time.time()), score)))
-            # print('gbdt score', score)
+            y_pred = gbdt.predict(test_xx)
+            y_predprob = gbdt.predict_proba(test_xx)[:, 1]
+            print('accuracy', metrics.accuracy_score(test_yy, y_pred))
+            print('AUC', metrics.roc_auc_score(test_yy, y_predprob))
+
+            score = gbdt.score(test_xx, test_yy)
+            joblib.dump(gbdt, os.path.join(daikuan_path, 'gbdt_model_time_{}_score_{}'.format(int(time.time()), score)))
+            print('gbdt score', score)
 
 
 if __name__ == '__main__':
