@@ -42,10 +42,12 @@ def plot_classifier(classifier, x, y):
 
 def test():
     # C 越大 惩罚权重越大，分解边越间隔最大化，分类边界越优
-    classifier = linear_model.LogisticRegression(penalty='l2', solver='liblinear', C=100)
-    classifier.fit(x, y)
+    classifier = linear_model.LogisticRegression(penalty='l2', solver='liblinear', C=1)
+    classifier.fit(x, y, )
+    # r = classifier.decision_function(x)
+    # print(r)
 
-    plot_classifier(classifier, x, y)
+    # plot_classifier(classifier, x, y)
 
 
 def bayse():
@@ -80,6 +82,6 @@ def randomt():
 
 
 if __name__ == '__main__':
-    # test()
+    test()
     # bayse()
-    randomt()
+    # randomt()
