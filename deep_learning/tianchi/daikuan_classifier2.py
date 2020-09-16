@@ -265,4 +265,4 @@ if __name__ == '__main__':
     dai = DaiKuan()
     # dai.format_train_x_train_y_test_x(daikuan_classifier_path, daikuan_test_path)
     # dai.load_train_x_train_y_test_x()
-    dai.train(model='rf', balance=True)
+    dai.train(model='lgbm', balance=True)

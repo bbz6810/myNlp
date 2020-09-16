@@ -58,3 +58,6 @@ news_one_to_one_path = os.path.join(corpus_root_path, 'one2one')
 daikuan_path = os.path.join(corpus_root_path, 'daikuan')
 daikuan_classifier_path = os.path.join(daikuan_path, 'train.csv')
 daikuan_test_path = os.path.join(daikuan_path, 'testA.csv')
+
+# applications data
+knowledge_graph_root_path = os.path.join(corpus_root_path, 'question_answer_data')
