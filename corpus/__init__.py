@@ -61,3 +61,7 @@ daikuan_test_path = os.path.join(daikuan_path, 'testA.csv')
 
 # applications data
 knowledge_graph_root_path = os.path.join(corpus_root_path, 'question_answer_data')
+
+# 实体识别 关系抽取
+ner_relation_extract_path = os.path.join(corpus_root_path, 'ner_ie')
+chinese_ner_path = os.path.join(ner_relation_extract_path, 'chinese_ner')

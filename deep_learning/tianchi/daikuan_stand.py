@@ -4,16 +4,14 @@ import datetime
 import joblib
 import numpy as np
 import pandas as pd
-from keras import models, layers
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import AdaBoostClassifier
-from sklearn.model_selection import train_test_split, GridSearchCV, KFold, cross_val_score
+from sklearn.model_selection import train_test_split, GridSearchCV, KFold, cross_val_score, StratifiedKFold
 from sklearn.linear_model import LogisticRegression
 from sklearn.decomposition import PCA
 from sklearn.svm import SVC
-from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor, GradientBoostingClassifier, \
-    VotingClassifier, RandomForestClassifier
-from lightgbm import LGBMRegressor, LGBMClassifier
+from sklearn.ensemble import GradientBoostingClassifier, VotingClassifier, RandomForestClassifier
+from lightgbm import LGBMClassifier
 import lightgbm as lgb
 from sklearn.metrics import mean_squared_error
 from sklearn.preprocessing import OneHotEncoder, StandardScaler, LabelEncoder
@@ -30,6 +28,8 @@ from corpus import daikuan_classifier_path, daikuan_test_path, corpus_root_path,
     2、处理离散化数据
     3、处理连续数据
     4、拆分训练和测试数据，并入模型跑数据
+    
+    贝叶斯调参能调到一个较优的解，要根据网格搜索具体细调
 """
 
 title = ['id', 'loanAmnt', 'term', 'interestRate', 'installment', 'grade', 'subGrade', 'employmentTitle',
@@ -51,7 +51,7 @@ employment_length_dict = {'< 1 year': 0, '10+ years': 10, '8 years': 8, '1 year'
 
 train_max_length = 800000
 test_max_length = 800000
-samples = 119000
+samples = 100000
 source_x_dim = 144
 
 
@@ -287,18 +287,19 @@ class DaiKuan:
             #         print('{},{}'.format(idx + 800000, y))
             #         f.write('{},{}\n'.format(idx + 800000, y))
         elif model == 'rf':
-            param_test2 = {'min_samples_split': range(50, 100, 10), 'min_samples_leaf': range(5, 15, 2)}
+            param_test2 = {'max_depth': range(6, 16, 1), 'min_samples_split': range(60, 301, 20)}
             # {'max_depth': range(4, 13, 1), 'min_samples_split': range(50, 201, 20)}
             # {'min_samples_split':range(80,150,20), 'min_samples_leaf':range(10,60,10)}
             # {'max_features':range(3,11,2)}
             m = GridSearchCV(estimator=RandomForestClassifier(oob_score=True,
                                                               verbose=1,
-                                                              n_estimators=256,
-                                                              max_depth=19,
-                                                              # min_samples_split=80,
-                                                              # min_samples_leaf=10,
-                                                              max_features='sqrt'),
-                             param_grid=param_test2, scoring='roc_auc', iid=False, cv=5, n_jobs=4)
+                                                              n_estimators=500,
+                                                              # max_depth=8,
+                                                              min_samples_split=100,
+                                                              min_samples_leaf=20,
+                                                              max_features='sqrt',
+                                                              random_state=1),
+                             param_grid=param_test2, scoring='roc_auc', iid=False, cv=10, n_jobs=4)
             m.fit(train_x, train_y.reshape(-1, ))
             # joblib.dump(m, os.path.join(daikuan_path, 'rf_model_{}'.format(int(time.time()))))
             print('cv rf best param', m.best_params_)
@@ -306,59 +307,69 @@ class DaiKuan:
         elif model == 'lgbm':
             params = {
                 # 'boosting_type': ('gbdt', 'dart', 'rf'),
-                # 'num_leaves': range(10, 80, 5),  # 细调
-                # 'max_depth': range(3, 15, 2),
+                # 'num_leaves': range(5, 11, 1),  # 细调  7
+                # 'max_depth': range(1, 4, 1),  # 3
                 # 'n_estimators': range(100, 400, 50),
-                'min_split_gain': [i / 10 for i in range(0, 11)],
-                # 'min_data_in_leaf': range(20, 51, 5),
-                # 'bagging_fraction': [i / 10 for i in range(5, 10, 1)],
-                # 'feature_fraction': [i / 10 for i in range(5, 10, 1)],
-                # 'bagging_freq': range(0, 81, 10),
+                # 'min_data_in_leaf': range(15, 25, 1),
+                # 'min_child_weight': [i / 10000 for i in range(10)],
+                'bagging_fraction': [i / 10 for i in range(1, 10, 1)],
+                'feature_fraction': [i / 10 for i in range(1, 10, 1)],
+                'bagging_freq': range(0, 101, 10),
                 # 'reg_lambda': [0, 0.001, 0.01, 0.03, 0.08, 0.3, 0.5],
-                # 'reg_alpha': [0, 0.001, 0.01, 0.03, 0.08, 0.3, 0.5]
+                # 'reg_alpha': [0, 0.001, 0.01, 0.03, 0.08, 0.3, 0.5],
+                # 'min_split_gain': [i / 10 for i in range(0, 11)]
             }
-            m = GridSearchCV(estimator=LGBMClassifier(
-                objective='binary',
-                boosting_type='gbdt',
-                n_estimators=200,
+            cv_fold = StratifiedKFold(n_splits=10, random_state=0, shuffle=True)
+            lgb_model = LGBMClassifier(
+                n_estimators=581,
                 learning_rate=0.1,
-                num_leaves=40,
-                max_depth=13,
-                bagging_fraction=0.9,
-                feature_fraction=0.6,
-                bagging_freq=40,
-                min_data_in_leaf=20,
-                min_child_weight=0.001,
-                min_split_gain=0.7,
-                reg_lambda=0.01,
-                reg_alpha=0.5
-            ), cv=10, param_grid=params, scoring='roc_auc', n_jobs=4, verbose=1)
-            m.fit(train_xx, train_yy.reshape(-1, ))
-            print('cv lgbm best param', m.best_params_)
-            print('cv lgbm best socre', m.best_score_)
+                num_leaves=7,
+                max_depth=3,
+                min_data_in_leaf=22,
+                min_child_weight=0,
+                bagging_fraction=1.0,
+                feature_fraction=1.0,
+                bagging_freq=0,
+                min_split_gain=0,
+                reg_lambda=0,
+                reg_alpha=0
+            )
+            grid_search = GridSearchCV(estimator=lgb_model, cv=cv_fold, param_grid=params, scoring='roc_auc', n_jobs=4)
+            grid_search.fit(train_xx, train_yy.reshape(-1, ))
+            print('cv lgbm best param', grid_search.best_params_)
+            print('cv lgbm best socre', grid_search.best_score_)
 
-            # m = LGBMClassifier(
-            #     n_estimators=128,
-            #     learning_rate=0.1,
-            #     num_leaves=32,
-            #     max_depth=9,
-            #     bagging_fraction=0.9,
-            #     feature_fraction=0.6,
-            #     bagging_freq=40,
-            #     min_data_in_leaf=20,
-            #     min_child_weight=0.001,
-            #     min_split_gain=0.7,
-            #     reg_lambda=0.01,
-            #     reg_alpha=0.5
-            # )
-            # m.fit(train_xx, train_yy.reshape(-1, ))
-            # joblib.dump(m, os.path.join(daikuan_path, 'lgbm_model_{}'.format(int(time.time()))))
-            # m = joblib.load(os.path.join(daikuan_path, 'lgbm_model_1600173987'))
-            # r = m.predict(test_xx)
-            # for i in r:
-            #     print(i)
-            # print('cv lgbm best param', m.best_params_)
-            # print('cv lgbm best socre', m.best_score_)
+            # acc_list = []
+            # auc_list = []
+            # for i in range(10):
+            #     train_xx, test_xx, train_yy, test_yy = train_test_split(train_x, train_y, train_size=0.8)
+            #     m = LGBMClassifier(
+            #         n_estimators=581,
+            #         learning_rate=0.1,
+            #         num_leaves=7,
+            #         max_depth=3,
+            #         bagging_fraction=1.0,
+            #         feature_fraction=1.0,
+            #         bagging_freq=0,
+            #         min_data_in_leaf=20,
+            #         min_child_weight=0.001,
+            #         min_split_gain=0,
+            #         reg_lambda=0,
+            #         reg_alpha=0,
+            #         silent=True
+            #     )
+            #
+            #     m.fit(train_xx, train_yy.reshape(-1, ))
+            #     m.predict_proba(test_xx)
+            #
+            #     y_pred = m.predict(test_xx)
+            #     y_predprob = m.predict_proba(test_xx)[:, 1]
+            #     print('accuracy', metrics.accuracy_score(test_yy, y_pred))
+            #     print('AUC', metrics.roc_auc_score(test_yy, y_predprob))
+            #     acc_list.append(metrics.accuracy_score(test_yy, y_pred))
+            #     auc_list.append(metrics.roc_auc_score(test_yy, y_predprob))
+            # print('accuracy list', acc_list, sum(acc_list) / len(acc_list))
+            # print('auc list', auc_list, sum(auc_list) / len(auc_list))
 
         elif model == 'gbdt':
             # 调参 https://blog.csdn.net/weixin_40924580/article/details/85043801
@@ -393,55 +404,54 @@ class DaiKuan:
             train_m = lgb.Dataset(train_xx, train_yy.reshape(-1, ))
             test_m = lgb.Dataset(test_xx, test_yy.reshape(-1, ))
 
-            # cv_score = []
-            # kf = KFold(n_splits=5, shuffle=True, random_state=100)
-            # for i, (train_index, valid_index) in enumerate(kf.split(train_x, train_y)):
-            #     train_x_split, train_y_split, test_x_split, test_y_split = train_x[train_index], train_y[train_index], \
-            #                                                                train_x[valid_index], train_y[valid_index]
-            #     train_m = lgb.Dataset(train_x_split, train_y_split.reshape(-1, ))
-            #     test_m = lgb.Dataset(test_x_split, test_y_split.reshape(-1, ))
-            #     # params = {
-            #     #     'boosting_type': 'gbdt',
-            #     #     'objective': 'binary',
-            #     #     'learning_rate': 0.01,
-            #     #     'metric': 'auc',
-            #     #     'num_leaves': 14,
-            #     #     'max_depth': 19,
-            #     #     'min_data_in_leaf': 37,
-            #     #     'min_child_weight': 1.6,
-            #     #     'reg_lambda': 9,
-            #     #     'reg_alpha': 7,
-            #     #     'feature_fraction': 0.69,
-            #     #     'bagging_fraction': 0.98,
-            #     #     'bagging_freq': 96,
-            #     #     'min_split_gain': 0.4,
-            #     #     'nthread': 8
-            #     # }
-            #     params = {
-            #         'boosting_type': 'gbdt',
-            #         'objective': 'binary',
-            #         'learning_rate': 0.01,
-            #         'metric': 'auc',
-            #         'num_leaves': 15,
-            #         'max_depth': 18,
-            #         'min_data_in_leaf': 23,
-            #         'min_child_weight': 1.4,
-            #         'reg_lambda': 9,
-            #         'reg_alpha': 8,
-            #         'feature_fraction': 0.56,
-            #         'bagging_fraction': 0.92,
-            #         'bagging_freq': 99,
-            #         'min_split_gain': 0.84,
-            #         'nthread': 8
-            #     }
-            #     model = lgb.train(params=params, train_set=train_m, valid_sets=test_m, num_boost_round=20000,
-            #                       verbose_eval=1000, early_stopping_rounds=200)
-            #     val_pred = model.predict(test_x_split, num_iteration=model.best_iteration)
-            #     cv_score.append(metrics.roc_auc_score(test_y_split, val_pred))
-            #
-            # print('cv scores', cv_score)
-            # print('cv score means', np.mean(cv_score))
-            # print('cv std', np.std(cv_score))
+            cv_score = []
+            kf = KFold(n_splits=5, shuffle=True, random_state=100)
+            for i, (train_index, valid_index) in enumerate(kf.split(train_x, train_y)):
+                train_x_split, train_y_split, test_x_split, test_y_split = train_x[train_index], train_y[train_index], \
+                                                                           train_x[valid_index], train_y[valid_index]
+                train_m = lgb.Dataset(train_x_split, train_y_split.reshape(-1, ))
+                test_m = lgb.Dataset(test_x_split, test_y_split.reshape(-1, ))
+                # params = {
+                #     'boosting_type': 'gbdt',
+                #     'objective': 'binary',
+                #     'learning_rate': 0.01,
+                #     'metric': 'auc',
+                #     'num_leaves': 14,
+                #     'max_depth': 19,
+                #     'min_data_in_leaf': 37,
+                #     'min_child_weight': 1.6,
+                #     'reg_lambda': 9,
+                #     'reg_alpha': 7,
+                #     'feature_fraction': 0.69,
+                #     'bagging_fraction': 0.98,
+                #     'bagging_freq': 96,
+                #     'min_split_gain': 0.4,
+                #     'nthread': 8
+                # }
+                params = {
+                    'boosting_type': 'gbdt',
+                    'objective': 'binary',
+                    'learning_rate': 0.01,
+                    'metric': 'auc',
+                    'num_leaves': 15,
+                    'max_depth': 18,
+                    'min_data_in_leaf': 40,
+                    'min_child_weight': 1.4,
+                    'reg_lambda': 9,
+                    'reg_alpha': 8,
+                    'feature_fraction': 0.6,
+                    'bagging_fraction': 0.9,
+                    'bagging_freq': 85,
+                    'min_split_gain': 0.84
+                }
+                model = lgb.train(params=params, train_set=train_m, valid_sets=test_m, num_boost_round=20000,
+                                  verbose_eval=1000, early_stopping_rounds=200)
+                val_pred = model.predict(test_x_split, num_iteration=model.best_iteration)
+                cv_score.append(metrics.roc_auc_score(test_y_split, val_pred))
+
+            print('cv scores', cv_score)
+            print('cv score means', np.mean(cv_score))
+            print('cv std', np.std(cv_score))
 
             # params = {
             #     'boosting_type': 'gbdt',
@@ -474,43 +484,63 @@ class DaiKuan:
             # print('迭代次数{}'.format(len(cv_result_lgb['auc-mean'])))
             # print('最终模型的AUC为{}'.format(max(cv_result_lgb['auc-mean'])))
 
-            params = {
-                'boosting_type': 'gbdt',
-                'objective': 'binary',
-                'learning_rate': 0.01,
-                'n_estimators': 192,
-                'metric': 'auc',
-                'num_leaves': 15,
-                'max_depth': 18,
-                'min_data_in_leaf': 32,
-                'min_child_weight': 1.4,
-                'min_split_gain': 0.4,
-                'reg_lambda': 9,
-                'reg_alpha': 8,
-                'feature_fraction': 0.6,
-                'bagging_fraction': 0.95,
-                'bagging_freq': 95,
-                'nthread': 8
-            }
-            model = lgb.train(params, train_set=train_m, valid_sets=test_m, num_boost_round=10000, verbose_eval=1000,
-                              early_stopping_rounds=200)
+            # 2020-09-16
+            # params = {
+            #     'boosting_type': 'gbdt',
+            #     'objective': 'binary',
+            #     'learning_rate': 0.01,
+            #     'n_estimators': 192,
+            #     'metric': 'auc',
+            #     'num_leaves': 15,
+            #     'max_depth': 18,
+            #     'min_data_in_leaf': 32,
+            #     'min_child_weight': 1.4,
+            #     'min_split_gain': 0.4,
+            #     'reg_lambda': 9,
+            #     'reg_alpha': 8,
+            #     'feature_fraction': 0.6,
+            #     'bagging_fraction': 0.95,
+            #     'bagging_freq': 95,
+            #     'nthread': 8
+            # }
 
-            val_pre_lgb = model.predict(test_xx)
-
-            print(val_pre_lgb.shape)
-            print(test_yy.shape)
-            fpr, tpr, threshold = metrics.roc_curve(test_yy, val_pre_lgb)
-            print(fpr.shape, tpr.shape, threshold.shape)
-            roc_auc = metrics.auc(fpr, tpr)
-            joblib.dump(model,
-                        os.path.join(daikuan_path, 'lgb_model_time_{}_auc_{:.4f}'.format(int(time.time()), roc_auc)))
-            print('调参lightgbm单模型在验证集上的AUC：{}'.format(roc_auc))
-
-            r = model.predict(test)
-            with open(os.path.join(daikuan_path, 'samples_gbdt20200916.csv'), mode='w') as f:
-                f.write('id,isDefault\n')
-                for idx, y in enumerate(r):
-                    f.write('{},{}\n'.format(idx + 800000, y))
+            # params = {
+            #     'boosting_type': 'gbdt',
+            #     'objective': 'binary',
+            #     'learning_rate': 0.01,
+            #     'n_estimators': 192,
+            #     'metric': 'auc',
+            #     'num_leaves': 10,
+            #     'max_depth': 24,
+            #     'min_data_in_leaf': 12,
+            #     'min_child_weight': 1.48,
+            #     'min_split_gain': 0.56,
+            #     'reg_lambda': 0.17,
+            #     'reg_alpha': 8.9,
+            #     'feature_fraction': 0.6,
+            #     'bagging_fraction': 0.88,
+            #     'bagging_freq': 35,
+            #     'nthread': 8
+            # }
+            # model = lgb.train(params, train_set=train_m, valid_sets=test_m, num_boost_round=10000, verbose_eval=1000,
+            #                   early_stopping_rounds=200)
+            #
+            # val_pre_lgb = model.predict(test_xx)
+            #
+            # print(val_pre_lgb.shape)
+            # print(test_yy.shape)
+            # fpr, tpr, threshold = metrics.roc_curve(test_yy, val_pre_lgb)
+            # print(fpr.shape, tpr.shape, threshold.shape)
+            # roc_auc = metrics.auc(fpr, tpr)
+            # joblib.dump(model,
+            #             os.path.join(daikuan_path, 'lgb_model_time_{}_auc_{:.4f}'.format(int(time.time()), roc_auc)))
+            # print('调参lightgbm单模型在验证集上的AUC：{}'.format(roc_auc))
+            #
+            # r = model.predict(test)
+            # with open(os.path.join(daikuan_path, 'samples_gbdt20200916.csv'), mode='w') as f:
+            #     f.write('id,isDefault\n')
+            #     for idx, y in enumerate(r):
+            #         f.write('{},{}\n'.format(idx + 800000, y))
 
         elif model == 'bayes':
             def rf_cv_lgb(num_leaves, max_depth, bagging_fraction, feature_fraction, bagging_freq, min_data_in_leaf,
@@ -555,4 +585,4 @@ if __name__ == '__main__':
     dai = DaiKuan()
     # dai.format_train_x_train_y_test_x(daikuan_classifier_path, daikuan_test_path)
     # dai.load_train_x_train_y_test_x()
-    dai.train(model='lgb', balance=True)
+    dai.train(model='lgbm', balance=True)

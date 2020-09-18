@@ -1,6 +1,9 @@
 """ 源连接https://github.com/stephen-v/zh-NER-keras
+    ner+关系抽取 https://blog.csdn.net/NeilGY/article/details/87966676
 
 """
+import os
+import platform
 import numpy as np
 from collections import Counter
 from keras import layers, models
@@ -8,11 +11,9 @@ from keras.preprocessing.sequence import pad_sequences
 from keras_contrib.layers import CRF
 
 from deep_learning.data_pretreatment import NNParam
-from corpus import crf_model_path
+from corpus import crf_model_path, ner_relation_extract_path
 from corpus.load_corpus import LoadCorpus
 from keras.initializers import he_normal
-
-import platform
 
 chunk_tags = ['O', 'B-PER', 'I-PER', 'B-LOC', 'I-LOC', "B-ORG", "I-ORG"]
 
@@ -57,8 +58,8 @@ def process_data(data, vocab, maxlen=100):
 
 def load_data():
     crf_param = NNParam()
-    train = _parse_data(open('/Users/zhoubb/projects/corpus/crf-train.txt', 'rb'))
-    test = _parse_data(open('/Users/zhoubb/projects/corpus/crf-test.txt', 'rb'))
+    train = _parse_data(open(os.path.join(ner_relation_extract_path, 'ner-train.txt', 'rb')))
+    test = _parse_data(open(os.path.join(ner_relation_extract_path, 'ner-test.txt', 'rb')))
 
     wordcount = Counter(k.split()[0] for sample in train for k in sample)
     d_vocab = dict()
@@ -93,7 +94,7 @@ class CRFKeras:
         model.add(crf)
         print(model.summary())
         model.compile(optimizer='adam', loss=crf.loss_function, metrics=[crf.accuracy])
-        # model.compile(optimizer='rmsprop', loss=crf.loss_function, metrics=[crf.accuracy])
+        # model.compile(optimizer='rmsprop', loss=ner.loss_function, metrics=[ner.accuracy])
         return model
 
     def create_matrix(self, vocab):
@@ -145,7 +146,7 @@ class CRFKeras:
 
 
 if __name__ == '__main__':
-    crf = CRFKeras()
-    crf.train()
-    crf.predict()
+    lstm_crf = CRFKeras()
+    lstm_crf.train()
+    # ner.predict()
     # load_data()
