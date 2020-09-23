@@ -42,7 +42,7 @@ class FastText(NN):
 
 def run():
     pretreatment = Pretreatment()
-    train_x, test_x, train_y, test_y = pretreatment.train_test_split(c=20, test_size=0.6)
+    train_x, test_x, train_y, test_y = pretreatment.train_test_split(c=2, test_size=0.6)
     # embedding_matrix = pretreatment.create_embedding_matrix(30000)
     textrnn = FastText(pretreatment.nnparam)
     # textrnn.train(train_x, train_y, embedding_matrix)  # 精度 0.9323043484250149 损失 0.270193725742771

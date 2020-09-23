@@ -287,15 +287,16 @@ class DaiKuan:
             #         print('{},{}'.format(idx + 800000, y))
             #         f.write('{},{}\n'.format(idx + 800000, y))
         elif model == 'rf':
-            param_test2 = {'max_depth': range(6, 16, 1), 'min_samples_split': range(60, 301, 20)}
+            param_test2 = {'max_depth': range(4, 13, 1), 'min_samples_split': range(80, 150, 20),
+                           'min_samples_leaf': range(10, 60, 10), 'max_features': range(3, 11, 2)}
             # {'max_depth': range(4, 13, 1), 'min_samples_split': range(50, 201, 20)}
             # {'min_samples_split':range(80,150,20), 'min_samples_leaf':range(10,60,10)}
             # {'max_features':range(3,11,2)}
             m = GridSearchCV(estimator=RandomForestClassifier(oob_score=True,
                                                               verbose=1,
                                                               n_estimators=500,
-                                                              # max_depth=8,
-                                                              min_samples_split=100,
+                                                              max_depth=20,
+                                                              min_samples_split=20,
                                                               min_samples_leaf=20,
                                                               max_features='sqrt',
                                                               random_state=1),
@@ -305,39 +306,88 @@ class DaiKuan:
             print('cv rf best param', m.best_params_)
             print('cv rf best socre', m.best_score_)
         elif model == 'lgbm':
-            params = {
-                # 'boosting_type': ('gbdt', 'dart', 'rf'),
-                # 'num_leaves': range(5, 11, 1),  # 细调  7
-                # 'max_depth': range(1, 4, 1),  # 3
-                # 'n_estimators': range(100, 400, 50),
-                # 'min_data_in_leaf': range(15, 25, 1),
-                # 'min_child_weight': [i / 10000 for i in range(10)],
-                'bagging_fraction': [i / 10 for i in range(1, 10, 1)],
-                'feature_fraction': [i / 10 for i in range(1, 10, 1)],
-                'bagging_freq': range(0, 101, 10),
-                # 'reg_lambda': [0, 0.001, 0.01, 0.03, 0.08, 0.3, 0.5],
-                # 'reg_alpha': [0, 0.001, 0.01, 0.03, 0.08, 0.3, 0.5],
-                # 'min_split_gain': [i / 10 for i in range(0, 11)]
+            # 网格搜索确认超参
+            # params = {
+            #     # 'boosting_type': ('gbdt', 'dart', 'rf'),
+            #     # 'num_leaves': range(5, 11, 1),  # 细调  7
+            #     # 'max_depth': range(1, 4, 1),  # 3
+            #     # 'n_estimators': range(100, 400, 50),
+            #     # 'min_data_in_leaf': range(15, 25, 1),
+            #     # 'min_child_weight': [i / 10000 for i in range(10)],
+            #     # 'bagging_fraction': [i / 10 for i in range(1, 10, 1)],
+            #     # 'feature_fraction': [i / 10 for i in range(1, 10, 1)],
+            #     # 'bagging_freq': range(0, 101, 10),
+            #     # 'reg_lambda': [0, 0.001, 0.01, 0.03, 0.08, 0.3, 0.5],
+            #     # 'reg_alpha': [0, 0.001, 0.01, 0.03, 0.08, 0.3, 0.5],
+            #     # 'min_split_gain': [i / 10 for i in range(0, 11)]
+            # }
+            # cv_fold = StratifiedKFold(n_splits=10, random_state=0, shuffle=True)
+            # lgb_model = LGBMClassifier(
+            #     n_estimators=581,
+            #     learning_rate=0.1,
+            #     num_leaves=7,
+            #     max_depth=3,
+            #     min_data_in_leaf=22,
+            #     min_child_weight=0,
+            #     bagging_fraction=0.9,
+            #     feature_fraction=0.7,
+            #     bagging_freq=30,
+            #     min_split_gain=0.9,
+            #     reg_lambda=0.08,
+            #     reg_alpha=0.01
+            # )
+            # grid_search = GridSearchCV(estimator=lgb_model, cv=cv_fold, param_grid=params, scoring='roc_auc', n_jobs=4)
+            # grid_search.fit(train_xx, train_yy.reshape(-1, ))
+            # print('cv lgbm best param', grid_search.best_params_)
+            # print('cv lgbm best socre', grid_search.best_score_)
+
+            # 设置较小学习率来确定最终的num_boost_round
+            # final_params = {
+            #     'boosting_type': 'gbdt',
+            #     'learning_rate': 0.01,
+            #     'num_leaves': 7,
+            #     'max_depth': 3,
+            #     'min_data_in_leaf': 22,
+            #     'min_child_weight': 0,
+            #     'bagging_fraction': 0.9,
+            #     'feature_fraction': 0.7,
+            #     'bagging_freq': 30,
+            #     'min_split_gain': 0.9,
+            #     'reg_lambda': 0.08,
+            #     'reg_alpha': 0.01
+            # }
+
+            final_params = {
+                'boosting_type': 'gbdt',
+                'learning_rate': 0.01,
+                'metric': 'auc',
+                'num_leaves': 14,
+                'max_depth': 19,
+                'min_data_in_leaf': 37,
+                'min_child_weight': 1.6,
+                'feature_fraction': 0.69,
+                'bagging_fraction': 0.98,
+                'bagging_freq': 96,
+                'min_split_gain': 0.4,
+                'reg_lambda': 9,
+                'reg_alpha': 7,
             }
-            cv_fold = StratifiedKFold(n_splits=10, random_state=0, shuffle=True)
-            lgb_model = LGBMClassifier(
-                n_estimators=581,
-                learning_rate=0.1,
-                num_leaves=7,
-                max_depth=3,
-                min_data_in_leaf=22,
-                min_child_weight=0,
-                bagging_fraction=1.0,
-                feature_fraction=1.0,
-                bagging_freq=0,
-                min_split_gain=0,
-                reg_lambda=0,
-                reg_alpha=0
-            )
-            grid_search = GridSearchCV(estimator=lgb_model, cv=cv_fold, param_grid=params, scoring='roc_auc', n_jobs=4)
-            grid_search.fit(train_xx, train_yy.reshape(-1, ))
-            print('cv lgbm best param', grid_search.best_params_)
-            print('cv lgbm best socre', grid_search.best_score_)
+            lgb_train = lgb.Dataset(train_x, train_y.reshape(-1, ))
+            cv_result = lgb.cv(train_set=lgb_train,
+                               early_stopping_rounds=20,
+                               num_boost_round=5000,
+                               nfold=10,
+                               stratified=True,
+                               shuffle=True,
+                               params=final_params,
+                               metrics='auc',
+                               seed=0,
+                               )
+
+            print('迭代次数{}'.format(len(cv_result['auc-mean'])))
+            print('交叉验证的AUC为{}'.format(max(cv_result['auc-mean'])))
+            # 迭代次数3356
+            # 交叉验证的AUC为0.727471435
 
             # acc_list = []
             # auc_list = []
@@ -405,45 +455,62 @@ class DaiKuan:
             test_m = lgb.Dataset(test_xx, test_yy.reshape(-1, ))
 
             cv_score = []
-            kf = KFold(n_splits=5, shuffle=True, random_state=100)
+            kf = KFold(n_splits=10, shuffle=True, random_state=100)
             for i, (train_index, valid_index) in enumerate(kf.split(train_x, train_y)):
                 train_x_split, train_y_split, test_x_split, test_y_split = train_x[train_index], train_y[train_index], \
                                                                            train_x[valid_index], train_y[valid_index]
                 train_m = lgb.Dataset(train_x_split, train_y_split.reshape(-1, ))
                 test_m = lgb.Dataset(test_x_split, test_y_split.reshape(-1, ))
-                # params = {
-                #     'boosting_type': 'gbdt',
-                #     'objective': 'binary',
-                #     'learning_rate': 0.01,
-                #     'metric': 'auc',
-                #     'num_leaves': 14,
-                #     'max_depth': 19,
-                #     'min_data_in_leaf': 37,
-                #     'min_child_weight': 1.6,
-                #     'reg_lambda': 9,
-                #     'reg_alpha': 7,
-                #     'feature_fraction': 0.69,
-                #     'bagging_fraction': 0.98,
-                #     'bagging_freq': 96,
-                #     'min_split_gain': 0.4,
-                #     'nthread': 8
-                # }
                 params = {
                     'boosting_type': 'gbdt',
                     'objective': 'binary',
                     'learning_rate': 0.01,
                     'metric': 'auc',
-                    'num_leaves': 15,
-                    'max_depth': 18,
-                    'min_data_in_leaf': 40,
-                    'min_child_weight': 1.4,
+                    'num_leaves': 14,
+                    'max_depth': 19,
+                    'min_data_in_leaf': 37,
+                    'min_child_weight': 1.6,
                     'reg_lambda': 9,
-                    'reg_alpha': 8,
-                    'feature_fraction': 0.6,
-                    'bagging_fraction': 0.9,
-                    'bagging_freq': 85,
-                    'min_split_gain': 0.84
+                    'reg_alpha': 7,
+                    'feature_fraction': 0.69,
+                    'bagging_fraction': 0.98,
+                    'bagging_freq': 96,
+                    'min_split_gain': 0.4,
+                    'nthread': 8
                 }
+                # params = {
+                #     'boosting_type': 'gbdt',
+                #     'objective': 'binary',
+                #     'learning_rate': 0.01,
+                #     'metric': 'auc',
+                #     'num_leaves': 15,
+                #     'max_depth': 18,
+                #     'min_data_in_leaf': 40,
+                #     'min_child_weight': 1.4,
+                #     'reg_lambda': 9,
+                #     'reg_alpha': 8,
+                #     'feature_fraction': 0.6,
+                #     'bagging_fraction': 0.9,
+                #     'bagging_freq': 85,
+                #     'min_split_gain': 0.84
+                # }
+
+                # params = {
+                #     'boosting_type': 'gbdt',
+                #     'objective': 'binary',
+                #     'metric': 'auc',
+                #     'learning_rate': 0.01,
+                #     'num_leaves': 7,
+                #     'max_depth': 3,
+                #     'min_data_in_leaf': 22,
+                #     'min_child_weight': 0,
+                #     'bagging_fraction': 0.9,
+                #     'feature_fraction': 0.7,
+                #     'bagging_freq': 30,
+                #     'min_split_gain': 0.9,
+                #     'reg_lambda': 0.08,
+                #     'reg_alpha': 0.01
+                # }
                 model = lgb.train(params=params, train_set=train_m, valid_sets=test_m, num_boost_round=20000,
                                   verbose_eval=1000, early_stopping_rounds=200)
                 val_pred = model.predict(test_x_split, num_iteration=model.best_iteration)
@@ -585,4 +652,4 @@ if __name__ == '__main__':
     dai = DaiKuan()
     # dai.format_train_x_train_y_test_x(daikuan_classifier_path, daikuan_test_path)
     # dai.load_train_x_train_y_test_x()
-    dai.train(model='lgbm', balance=True)
+    dai.train(model='lgb', balance=True)

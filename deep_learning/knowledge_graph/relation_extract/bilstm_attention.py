@@ -44,10 +44,11 @@ class BiLSTMAttention(nn.Module):
         return torch.randn(2, self.batch, self.hidden_dim // 2)
 
     def init_hidden_lstm(self):
-        return torch.randn(2, self.batch, self.embedding_dim // 2), torch.randn(2, self.batch, self.embedding_dim // 2)
+        return (
+            torch.randn(2, self.batch, self.embedding_dim // 2), torch.randn(2, self.batch, self.embedding_dim // 2))
 
     def attention(self, H):
-        M = F.tanh(H)
+        M = torch.tanh(H)
         a = F.softmax(torch.bmm(self.attention_weight, M), 2)
         a = torch.transpose(a, 1, 2)
         return torch.bmm(H, a)
@@ -60,7 +61,7 @@ class BiLSTMAttention(nn.Module):
         lstm_out = torch.transpose(lstm_out, 0, 1)
         lstm_out = torch.transpose(lstm_out, 1, 2)
         lstm_out = self.dropout_lstm(lstm_out)
-        att_out = F.tanh(self.attention(lstm_out))
+        att_out = torch.tanh(self.attention(lstm_out))
 
         relation = torch.tensor([i for i in range(self.tag_size)], dtype=torch.long).repeat(self.batch, 1)
         relation = self.relation_embeds(relation)
