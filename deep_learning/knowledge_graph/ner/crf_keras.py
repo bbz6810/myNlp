@@ -58,8 +58,8 @@ def process_data(data, vocab, maxlen=100):
 
 def load_data():
     crf_param = NNParam()
-    train = _parse_data(open(os.path.join(ner_relation_extract_path, 'ner-train.txt', 'rb')))
-    test = _parse_data(open(os.path.join(ner_relation_extract_path, 'ner-test.txt', 'rb')))
+    train = _parse_data(open(os.path.join(ner_relation_extract_path, 'crf-train.txt'), 'rb'))
+    test = _parse_data(open(os.path.join(ner_relation_extract_path, 'crf-test.txt'), 'rb'))
 
     wordcount = Counter(k.split()[0] for sample in train for k in sample)
     d_vocab = dict()

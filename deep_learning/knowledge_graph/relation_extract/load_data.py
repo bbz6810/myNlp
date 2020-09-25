@@ -170,10 +170,6 @@ class FormatData:
 
         self.save(datas, labels, position_e1, position_e2)
 
-        print('datas shape', datas.shape)
-        print('position1 shape', position_e1.shape)
-        print('position2 shape', position_e2.shape)
-
     def save(self, datas, labels, position_e1, position_e2):
         with open(os.path.join(chinese_ner_path, 'train_data.pkl'), mode='wb') as f:
             pickle.dump(datas, f)

@@ -6,11 +6,14 @@ from keras import layers, models
 import matplotlib.pyplot as plt
 from keras.utils import to_categorical
 from keras.initializers import he_normal
+from sklearn.model_selection import train_test_split
 
+from deep_learning.simple_attention.simple_attention_keras import SimpleAttention
 from deep_learning.knowledge_graph.relation_extract.load_data import FormatData, word_max_len
 from corpus import ner_relation_extract_path
+from tools import running_of_time
 
-SINGLE_ATTENTION_VECTOR = False
+SINGLE_ATTENTION_VECTOR = True
 APPLY_ATTENTION_BEFORE_LSTM = False
 INPUT_DIM = 2
 TIME_STEPS = 20
@@ -80,7 +83,7 @@ def model_attention_applied_before_lstm():
 class BiLSTMAttention:
     def __init__(self, config, embedding_pre):
         f_data = FormatData()
-        f_data.train_test_split()
+        # f_data.train_test_split()
 
         config = dict()
         config['embedding_size'] = len(f_data.word2id) + 1
@@ -110,7 +113,7 @@ class BiLSTMAttention:
         word_embeds = layers.Embedding(input_dim=self.embedding_size, output_dim=self.embedding_dim)
         pos1_embeds = layers.Embedding(input_dim=self.pos_size, output_dim=self.pos_dim)
         pos2_embeds = layers.Embedding(input_dim=self.pos_size, output_dim=self.pos_dim)
-        relation_embeds = layers.Embedding(input_dim=self.tag_size, output_dim=8)
+        # relation_embeds = layers.Embedding(input_dim=self.tag_size, output_dim=8)
 
         words = word_embeds(word_input)
         pos1 = pos1_embeds(pos1_input)
@@ -119,46 +122,64 @@ class BiLSTMAttention:
         # relation = relation_embeds(relation_input)
 
         sample = layers.concatenate([words, pos1, pos2])
-        print('sample shape', sample.shape)
+        print('输入映射层 shape', sample.shape)
 
-        lstm = layers.Bidirectional(layers.LSTM(units=self.hidden_dim // 2, return_sequences=True))(sample)
-        print('lstm shape', lstm.shape)
+        sample_dim3 = int(sample.shape[2])
+        lstm = layers.Bidirectional(layers.LSTM(units=sample_dim3, return_sequences=True))(sample)
+        print('lstm shape', lstm)
 
-        # attention
-        print('attention lstm shape', lstm.shape)
-        input_dim = int(lstm.shape[2])
-        lstm = layers.Permute((2, 1))(lstm)
-        lstm = layers.Dense(100, activation='softmax')(lstm)
-        if SINGLE_ATTENTION_VECTOR:
-            lstm = layers.Lambda(lambda x: K.mean(x, axis=1), name='dim_reduction')(lstm)
-            lstm = layers.RepeatVector(input_dim)(lstm)
-        lstm_probs = layers.Permute((2, 1), name='attention_vec')(lstm)
-        atten = layers.Multiply()([lstm, lstm_probs])
+        # # attention
+        # print('attention lstm shape', lstm.shape)
+        # input_dim = int(lstm.shape[2])
+        # lstm = layers.Permute((2, 1))(lstm)
+        # lstm = layers.Dense(sample_dim3 * 2, activation='softmax')(lstm)
+        # if SINGLE_ATTENTION_VECTOR:
+        #     lstm = layers.Lambda(lambda x: K.mean(x, axis=1), name='dim_reduction')(lstm)
+        #     lstm = layers.RepeatVector(input_dim)(lstm)
+        # lstm_probs = layers.Permute((2, 1), name='attention_vec')(lstm)
+        # atten = layers.Multiply()([lstm, lstm_probs])
+        # print('atten', atten.shape)
 
-        flat = layers.Flatten()(atten)
-        output = layers.Dense(self.tag_size, activation='softmax')(flat)
+        atten = SimpleAttention()(lstm)
+        print('atten', atten.shape)
+
+        # flat = layers.Flatten()(atten)
+
+        output = layers.Dense(self.tag_size, activation='softmax')(atten)
         model = models.Model(input=[word_input, pos1_input, pos2_input], output=output)
         print(model.summary())
         return model
 
+    @running_of_time
     def train(self):
         f_data = FormatData()
-        # train_datas, test_datas, train_labels, test_labels, train_pos1, test_pos1, train_pos2, test_pos2 = f_data.train_test_split()
         model = self.build_model()
-        model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
-        for i in range(10):
+        model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+        for i in range(5):
+            print('epoch', i)
             train_datas, test_datas, train_labels, test_labels, train_pos1, test_pos1, train_pos2, test_pos2 = \
                 f_data.train_test_split(shuffle=True)
             labels = to_categorical(train_labels)
             test_label = to_categorical(test_labels)
-            model.fit(x=[train_datas, train_pos1, train_pos2], y=labels, epochs=10, batch_size=32, verbose=2,
+            model.fit(x=[train_datas, train_pos1, train_pos2], y=labels, epochs=8, batch_size=32, verbose=2,
                       validation_data=([test_datas, test_pos1, test_pos2], test_label), shuffle=True)
 
-        model.save(os.path.join(ner_relation_extract_path, 'keras_lstm_att.model'))
+        model.save(os.path.join(ner_relation_extract_path, 'keras_lstm_att2.model'))
+
+    def predict(self):
+        model = models.load_model(os.path.join(ner_relation_extract_path, 'keras_lstm_att2.model'))
+        t = FormatData()
+        train_datas, test_datas, train_labels, test_labels, train_pos1, test_pos1, train_pos2, test_pos2 = \
+            t.train_test_split(train_split=1, shuffle=True)
+        labels = to_categorical(train_labels)
+        tup = model.evaluate(x=[train_datas, train_pos1, train_pos2], y=labels, batch_size=4096)
+        print(tup)
 
 
 if __name__ == '__main__':
-    BiLSTMAttention('', '').train()
+    # BiLSTMAttention('', '').build_model()
+    # BiLSTMAttention('', '').train()
+    BiLSTMAttention('', '').predict()
 
     # np.random.seed(1337)  # for reproducibility
     #

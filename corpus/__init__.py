@@ -52,8 +52,9 @@ ner_model = os.path.join(corpus_root_path, 'ltp_data', "ner.model")
 relation_extract_output_file = os.path.join(corpus_root_path, 'relation_extract_output.txt')
 
 # 天池比赛数据
-news_classifier_path = os.path.join(corpus_root_path, 'train_set.csv')
-news_test_path = os.path.join(corpus_root_path, 'test_b.csv')
+tianchi_news_class_path = os.path.join(corpus_root_path, 'tianchi_news_class')
+news_classifier_path = os.path.join(tianchi_news_class_path, 'train_set.csv')
+news_test_path = os.path.join(tianchi_news_class_path, 'test_a.csv')
 news_one_to_one_path = os.path.join(corpus_root_path, 'one2one')
 daikuan_path = os.path.join(corpus_root_path, 'daikuan')
 daikuan_classifier_path = os.path.join(daikuan_path, 'train.csv')
