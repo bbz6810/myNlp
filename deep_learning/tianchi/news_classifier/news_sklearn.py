@@ -215,7 +215,7 @@ def train_save():
 if __name__ == '__main__':
     # train()
     # train_save()
-    from deep_learning.tianchi.daikuan_classifier import DaiKuan
+    from deep_learning.tianchi.daikuan.daikuan_classifier import DaiKuan
     from corpus import daikuan_classifier_path, daikuan_test_path
 
     dai = DaiKuan()

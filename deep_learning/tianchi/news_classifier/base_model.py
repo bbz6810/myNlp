@@ -7,6 +7,7 @@ from keras.callbacks import ModelCheckpoint
 from corpus import tianchi_news_class_path
 from tools import running_of_time
 from deep_learning.simple_attention.simple_attention_keras import SimpleAttention
+from deep_learning.simple_attention.simple_attention2_keras import Attention
 
 
 class BaseNN:
@@ -103,16 +104,21 @@ class TextCNN(BaseNN):
         conv_2 = layers.Conv2D(256, (5, self.embedding_dim), padding='valid', activation='relu')(reshape)
         maxpool_2 = layers.MaxPool2D((self.max_words - 5 + 1, 1), strides=(1, 1), padding='valid')(conv_2)
 
-        con_cat = layers.concatenate(inputs=[maxpool_0, maxpool_1, maxpool_2], axis=1)
+        conv_3 = layers.Conv2D(256, (2, self.embedding_dim), padding='valid', activation='relu')(reshape)
+        maxpool_3 = layers.MaxPool2D((self.max_words - 2 + 1, 1), strides=(1, 1), padding='valid')(conv_3)
+
+        con_cat = layers.concatenate(inputs=[maxpool_3, maxpool_0, maxpool_1, maxpool_2], axis=1)
+        print('concat shape', con_cat.shape)
         flatten = layers.Flatten()(con_cat)
-        # print('flatten shape', flatten.shape)
+        print('flatten shape', flatten.shape)
         # atten = SimpleAttention()(con_cat)
         # flat = layers.Flatten()(atten)
 
+        # attention = Attention(step_dim=4)(con_cat)
+        # flatten = layers.Flatten()(attention)
+
         drop = layers.Dropout(0.4)(flatten)
-
         output = layers.Dense(self.class_num, activation='softmax')(drop)
-
         model = models.Model(inputs=inputs, output=output)
         print(model.summary())
         return model
@@ -146,7 +152,7 @@ class TextRNN(BaseNN):
         lstm = layers.Bidirectional(layers.LSTM(units=128, return_sequences=True))(word_embeds)
         print('lstm shape', lstm)
 
-        atten = SimpleAttention()(lstm)
+        atten = Attention(self.max_words)(lstm)
         print('atten', atten.shape)
 
         output = layers.Dense(self.class_num, activation='softmax')(atten)
@@ -160,4 +166,4 @@ class TextRNN(BaseNN):
         self.m.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
         self.m.fit(train_x, train_y, epochs=self.epochs, batch_size=self.batch_size, validation_split=0.2, verbose=1,
                    callbacks=self.callbacks(), shuffle=True)
-        self.save_model()
+        # self.save_model()

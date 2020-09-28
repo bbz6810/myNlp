@@ -9,9 +9,9 @@ from sklearn.model_selection import train_test_split
 from keras.preprocessing.sequence import pad_sequences
 from keras.utils import to_categorical
 
-from corpus import news_classifier_path, news_test_path, tianchi_news_class_path
+from corpus import tianchi_news_class_path
 from tools import running_of_time
-from deep_learning.tianchi.base_model import TextCNN, FastText, TextRNN
+from deep_learning.tianchi.news_classifier.base_model import TextRNN, FastText
 
 
 class TCNewsClass:
@@ -81,7 +81,7 @@ class TCNewsClass:
     def shuffle(self, x, y):
         np.random.seed(1)
         location = np.random.permutation(len(x))
-        return x[location][:200], y[location][:200]
+        return x[location][:20000], y[location][:20000]
         # return x[location], y[location]
 
     def train(self):
@@ -114,7 +114,7 @@ class TCNewsClass:
 
 
 def running():
-    tc = TCNewsClass(cls=TextCNN, embedding_dim=128, epochs=5, samples=1000000)
+    tc = TCNewsClass(cls=FastText, embedding_dim=128, epochs=5, samples=100000)
     tc.train()
 
 

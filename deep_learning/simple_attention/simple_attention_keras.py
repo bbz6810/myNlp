@@ -1,6 +1,7 @@
 # https://github.com/philipperemy/keras-attention-mechanism/blob/master/attention/attention.py
 
 from keras import layers
+from keras.utils import get_custom_objects
 
 
 class SimpleAttention(layers.Layer):
@@ -14,6 +15,7 @@ class SimpleAttention(layers.Layer):
         @return: 2D tensor with shape (batch_size, 128)
         """
         hidden_size = int(hidden_states.shape[2])
+        print('simple attention hidden_states shape', hidden_states.shape)
         # Inside dense layer
         #              hidden_states            dot               W            =>           score_first_part
         # (batch_size, time_steps, hidden_size) dot (hidden_size, hidden_size) => (batch_size, time_steps, hidden_size)
@@ -32,6 +34,8 @@ class SimpleAttention(layers.Layer):
             pre_activation)
         return attention_vector
 
+
+get_custom_objects().update({'SimpleAttention': SimpleAttention})
 
 if __name__ == '__main__':
     from deep_learning.knowledge_graph.relation_extract.bilstm_attention_keras import BiLSTMAttention

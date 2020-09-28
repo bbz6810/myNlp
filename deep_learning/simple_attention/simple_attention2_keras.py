@@ -2,6 +2,7 @@
 
 import keras.backend as K
 from keras import layers, initializers, regularizers, constraints
+from keras.utils import get_custom_objects
 
 
 class Attention(layers.Layer):
@@ -85,3 +86,11 @@ class Attention(layers.Layer):
 
     def compute_output_shape(self, input_shape):
         return input_shape[0], self.features_dim
+
+    def get_config(self):
+        config = super(Attention, self).get_config()
+        config['step_dim'] = self.step_dim
+        return config
+
+
+get_custom_objects().update({'Attention': Attention})

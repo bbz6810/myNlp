@@ -287,6 +287,11 @@ class DaiKuan:
             #         print('{},{}'.format(idx + 800000, y))
             #         f.write('{},{}\n'.format(idx + 800000, y))
         elif model == 'rf':
+            """
+            cv rf best param {'max_depth': 12, 'max_features': 9, 'min_samples_leaf': 10, 'min_samples_split': 120}
+            cv rf best socre 0.7136508939999999
+            function:train, cost time: 299799.0638449192
+            """
             param_test2 = {'max_depth': range(4, 13, 1), 'min_samples_split': range(80, 150, 20),
                            'min_samples_leaf': range(10, 60, 10), 'max_features': range(3, 11, 2)}
             # {'max_depth': range(4, 13, 1), 'min_samples_split': range(50, 201, 20)}
@@ -295,10 +300,10 @@ class DaiKuan:
             m = GridSearchCV(estimator=RandomForestClassifier(oob_score=True,
                                                               verbose=1,
                                                               n_estimators=500,
-                                                              max_depth=20,
-                                                              min_samples_split=20,
-                                                              min_samples_leaf=20,
-                                                              max_features='sqrt',
+                                                              max_depth=12,
+                                                              min_samples_split=120,
+                                                              min_samples_leaf=10,
+                                                              max_features=9,
                                                               random_state=1),
                              param_grid=param_test2, scoring='roc_auc', iid=False, cv=10, n_jobs=4)
             m.fit(train_x, train_y.reshape(-1, ))
