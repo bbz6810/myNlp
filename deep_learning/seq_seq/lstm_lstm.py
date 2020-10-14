@@ -47,6 +47,7 @@ def train():
 
 
 def build_nn():
+    # https://blog.csdn.net/u011327333/article/details/78501054   细胞输出状态
     encoder_input = layers.Input(shape=(None, word_dim), name='encoder_input')
     encoder_lstm = layers.LSTM(hidden_dim, return_state=True, name='encoder_lstm')
     encoder_output, state_h, state_c = encoder_lstm(encoder_input)

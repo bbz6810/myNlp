@@ -1,7 +1,10 @@
 # https://www.biaodianfu.com/lightgbm.html   lgb调参
 import os
 import time
+import sys
 import pickle
+
+sys.path.append('/Users/zhoubb/projects/myNlp')
 
 import pandas as pd
 import numpy as np
@@ -59,41 +62,53 @@ def train():
     # train_x, test_x, train_y, test_y = train_test_split(train_term_doc, train_df['label'], test_size=0.2, shuffle=True,
     #                                                     random_state=2020)
 
-    # CV
+    # CV 交叉验证
     kf = KFold(n_splits=10, shuffle=True, random_state=2020)
     train_matrix = np.zeros((train_df.shape[0], 14))
-    test_pre_matrix = np.zeros((10, test_df.shape[0], 14))
     cv_score = []
 
-    for i, (train_index, test_index) in enumerate(kf.split(train_term_doc)):
-        train_xx = train_term_doc[train_index]
-        train_yy = train_df['label'][train_index]
-        test_xx = train_term_doc[test_index]
-        test_yy = train_df['label'][test_index]
+    # test score is 0.9428105262012133
+    # 所有验证 score is 0.9415295480145144
+    # function: train, cost time: 59393.73948907852
 
-        model = lgb.LGBMClassifier(boosting_type='gbdt', num_leaves=2 ** 5, max_depth=-1, n_estimators=2000,
-                                   learning_rate=0.1, objective='multiclass', subsample=0.7, colsample_bytree=0.5,
-                                   reg_lambda=10, num_class=14, random_state=2020, min_child_weight=1.5,
-                                   metric='multi_logloss')
-        model.fit(train_xx, train_yy, eval_set=(test_xx, test_yy), early_stopping_rounds=100)
-        joblib.dump(model, os.path.join(tianchi_news_class_path, 'lgb_k_{}.model'.format(i)))
-        # 验证集预测
-        test_prob = model.predict_proba(test_xx)
-        train_matrix[test_index] = test_prob.reshape((test_xx.shape[0], 14))
-        test_pred = np.argmax(test_prob, axis=1)
-        score = f1(test_yy, test_pred)
-        print('test score is', score)
-        cv_score.append(score)
+    # for i, (train_index, valid_index) in enumerate(kf.split(train_term_doc)):
+    #     train_xx = train_term_doc[train_index]
+    #     train_yy = train_df['label'][train_index]
+    #     valid_xx = train_term_doc[valid_index]
+    #     valid_yy = train_df['label'][valid_index]
+    #
+    #     model = lgb.LGBMClassifier(boosting_type='gbdt', num_leaves=2 ** 5, max_depth=-1, n_estimators=2000,
+    #                                learning_rate=0.1, objective='multiclass', subsample=0.7, colsample_bytree=0.5,
+    #                                reg_lambda=10, num_class=14, random_state=2020, min_child_weight=1.5,
+    #                                metric='multi_logloss')
+    #     model.fit(train_xx, train_yy, eval_set=(valid_xx, valid_yy), early_stopping_rounds=100)
+    #     joblib.dump(model, os.path.join(tianchi_news_class_path, 'tfidf_lgb', 'lgb_k_{}.model'.format(i)))
+    #     # 验证集预测
+    #     valid_prob = model.predict_proba(valid_xx)
+    #     train_matrix[valid_index] = valid_prob.reshape((valid_xx.shape[0], 14))
+    #     valid_pred = np.argmax(valid_prob, axis=1)
+    #     score = f1(valid_yy, valid_pred)
+    #     print('test score is', score)
+    #     cv_score.append(score)
+    #
+    # all_pred = np.argmax(train_matrix, axis=1)
+    # score = f1(train_df['label'], all_pred)
+    # print('所有验证 score is', score)
 
     # 测试集预测
-    # test2_prob = model.predict_proba(test_term_doc)
-    # test_pre_matrix[i, :, :] = test2_prob.reshape((test_term_doc.shape[0], 14))
-
-    all_pred = np.argmax(train_matrix, axis=1)
-    score = f1(train_df['label'], all_pred)
-    print('所有验证 score is', score)
+    f = 10
+    test_pre_matrix = np.zeros((f, test_df.shape[0], 14))
+    for model_name in range(f):
+        model = joblib.load(os.path.join(tianchi_news_class_path, 'tfidf_lgb', 'lgb_k_{}.model'.format(model_name)))
+        test_prob = model.predict_proba(test_term_doc)
+        test_pre_matrix[model_name, :, :] = test_prob.reshape((test_term_doc.shape[0], 14))
+    test_pred = test_pre_matrix.mean(axis=0)
+    test_pred = np.argmax(test_pred, axis=1)
+    with open(os.path.join(tianchi_news_class_path, 'sample_submit.csv'), mode='w') as f:
+        f.write('label\n')
+        for idx, i in enumerate(test_pred):
+            f.write('{}\n'.format(i))
 
 
 if __name__ == '__main__':
-    # clean_data()
     train()
