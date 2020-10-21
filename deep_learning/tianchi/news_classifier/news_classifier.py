@@ -5,7 +5,7 @@ import pickle
 sys.path.append('/Users/zhoubb/projects/myNlp')
 
 import numpy as np
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, KFold
 from keras.preprocessing.sequence import pad_sequences
 from keras.utils import to_categorical
 
@@ -116,12 +116,22 @@ class TCNewsClass:
         x, y = self.load_data()
         x, y = self.shuffle(x, y)
         print('x shape', x.shape, 'y shape', y.shape)
-        train_x, test_x, train_y, test_y = train_test_split(x, y, train_size=0.8, shuffle=True)
         config = self.get_config()
         config['embedding_dim'] = 400
-        ft = self.cls(**config)
-        ft.train(train_x, train_y)
-        ft.predict(test_x, test_y)
+        # config['batch_size'] = 64
+
+        # train_x, test_x, train_y, test_y = train_test_split(x, y, train_size=0.8, shuffle=True)
+        # ft = self.cls(**config)
+        # ft.train(train_x, train_y)
+        # ft.predict(test_x, test_y)
+
+        print('start k fold')
+        kfold = KFold(n_splits=5, shuffle=True, random_state=2020)
+        for i, (train_index, test_index) in enumerate(kfold.split(x)):
+            train_x, train_y = x[train_index], y[train_index]
+            test_x, test_y = x[test_index], y[test_index]
+            ft = self.cls(**config)
+            ft.train(train_x, train_y, test_x, test_y)
 
     def predict(self):
         _, _ = self.load_data()
@@ -130,7 +140,7 @@ class TCNewsClass:
         config = self.get_config()
         nn = self.cls(**config)
         nn.load_model()
-        nn.predict(x)
+        nn.evaluate(x)
 
     def save_data(self, x, y):
         with open(os.path.join(tianchi_news_class_path, 'train_data_2400.pkl'), mode='wb') as f:

@@ -71,3 +71,7 @@ chinese_ner_path = os.path.join(ner_relation_extract_path, 'chinese_ner')
 elmo_data_base_path = os.path.join(corpus_root_path, 'elmo')
 elmo_data_set_path = os.path.join(elmo_data_base_path, 'datasets')
 elmo_module_path = os.path.join(elmo_data_base_path, 'models')
+
+# seq2seq对话
+seq2seq_config_path = os.path.join(corpus_root_path, 'seq2seq', 'seq2seq.config')
+seq2seq_data_path = os.path.join(corpus_root_path, 'seq2seq', 'seq2seq.data')

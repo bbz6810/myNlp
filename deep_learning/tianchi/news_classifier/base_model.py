@@ -3,7 +3,7 @@ import os
 import numpy as np
 from keras import models, layers
 from keras.initializers import he_normal
-from keras.callbacks import ModelCheckpoint
+from keras.callbacks import ModelCheckpoint, EarlyStopping
 from sklearn.metrics import f1_score
 from gensim.models import KeyedVectors
 
@@ -65,9 +65,10 @@ class BaseNN:
         # self.m = models.load_model(os.path.join(tianchi_news_class_path, self.model_name))
 
     def callbacks(self):
-        callback = ModelCheckpoint(filepath=os.path.join(tianchi_news_class_path, self.model_name), monitor='val_acc',
+        callback = ModelCheckpoint(filepath=os.path.join(tianchi_news_class_path, self.model_name), monitor='roc_auc',
                                    verbose=1, save_best_only=True, mode='max', period=2)
-        return [callback]
+        earlystop = EarlyStopping(monitor='val_acc', patience=2, verbose=1, mode='max')
+        return [callback, earlystop]
 
 
 class FastText(BaseNN):
@@ -164,7 +165,7 @@ class TextCNN(BaseNN):
                                      input_length=self.max_words, weights=[embedding_matrix])
         print('embedding', embedding)
         embed = embedding(inputs)
-        embed = layers.SpatialDropout1D(0.2)(embed)
+        embed = layers.SpatialDropout1D(0.3)(embed)
         convs = []
         for kernel_size in [2, 3, 4, 5]:
             c = layers.Conv1D(1024, kernel_size, activation='relu')(embed)
@@ -172,18 +173,18 @@ class TextCNN(BaseNN):
             convs.append(c)
         x = layers.Concatenate()(convs)
         x = layers.Dense(512, activation='relu')(x)
-        x = layers.Dropout(0.2)(x)
+        x = layers.Dropout(0.4)(x)
         output = layers.Dense(self.class_num, activation='softmax')(x)
         model = models.Model(input=inputs, output=output)
         print(model.summary())
         return model
 
     @running_of_time
-    def train(self, train_x, train_y):
+    def train(self, train_x, train_y, test_x=None, test_y=None):
         self.m = self.model_3()
         self.m.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
-        self.m.fit(train_x, train_y, epochs=self.epochs, batch_size=self.batch_size, validation_split=0.2, verbose=2,
-                   callbacks=self.callbacks(), shuffle=True)
+        self.m.fit(train_x, train_y, epochs=self.epochs, batch_size=self.batch_size, validation_data=(test_x, test_y),
+                   verbose=2, callbacks=self.callbacks(), shuffle=True)
 
     def predict(self, test_x):
         r = self.m.predict(test_x, batch_size=1024, verbose=1)

@@ -1,7 +1,9 @@
 import os
+import sys
 import time
 import datetime
 import joblib
+import pickle
 import numpy as np
 import pandas as pd
 from sklearn.tree import DecisionTreeClassifier
@@ -19,6 +21,9 @@ from sklearn import metrics
 from sklearn.feature_selection import VarianceThreshold
 from tqdm import tqdm
 from bayes_opt import BayesianOptimization
+from sklearn.metrics import f1_score
+
+sys.path.append('/Users/zhoubb/projects/myNlp')
 
 from tools import running_of_time
 from corpus import daikuan_classifier_path, daikuan_test_path, corpus_root_path, daikuan_path
@@ -98,8 +103,8 @@ class DaiKuan:
         # 类别型和数值型属性
         numerical_fea = list(train_data.select_dtypes(exclude=['object']).columns)
         category_fea = list(filter(lambda x: x not in numerical_fea, list(train_data.columns)))
-        print(numerical_fea)
-        print(category_fea)
+        print('数值型', numerical_fea)
+        print('类别型', category_fea)
         numerical_fea.remove('isDefault')
         # print(numerical_fea)
         # # print(category_fea)
@@ -247,7 +252,6 @@ class DaiKuan:
 
         return tmp_x[location2], tmp_y[location2]
 
-    @running_of_time
     def load_train_x_train_y_test_x(self, balance):
         train_x = np.load(os.path.join(daikuan_path, 'train_data_stand.npy'), allow_pickle=True)
         train_y = np.load(os.path.join(daikuan_path, 'train_y_stand.npy'), allow_pickle=True).reshape(-1, 1)
@@ -257,6 +261,10 @@ class DaiKuan:
         if balance:
             train_x, train_y = self.balance_data(train_x, train_y)
         return train_x, train_y, test_x
+
+    def shuffle(self, train_x, train_y):
+        location = np.random.permutation(train_x.shape[0])
+        return train_x[location], train_y[location]
 
     @running_of_time
     def train(self, model='lr', balance=False):
@@ -483,39 +491,6 @@ class DaiKuan:
                     'min_split_gain': 0.4,
                     'nthread': 8
                 }
-                # params = {
-                #     'boosting_type': 'gbdt',
-                #     'objective': 'binary',
-                #     'learning_rate': 0.01,
-                #     'metric': 'auc',
-                #     'num_leaves': 15,
-                #     'max_depth': 18,
-                #     'min_data_in_leaf': 40,
-                #     'min_child_weight': 1.4,
-                #     'reg_lambda': 9,
-                #     'reg_alpha': 8,
-                #     'feature_fraction': 0.6,
-                #     'bagging_fraction': 0.9,
-                #     'bagging_freq': 85,
-                #     'min_split_gain': 0.84
-                # }
-
-                # params = {
-                #     'boosting_type': 'gbdt',
-                #     'objective': 'binary',
-                #     'metric': 'auc',
-                #     'learning_rate': 0.01,
-                #     'num_leaves': 7,
-                #     'max_depth': 3,
-                #     'min_data_in_leaf': 22,
-                #     'min_child_weight': 0,
-                #     'bagging_fraction': 0.9,
-                #     'feature_fraction': 0.7,
-                #     'bagging_freq': 30,
-                #     'min_split_gain': 0.9,
-                #     'reg_lambda': 0.08,
-                #     'reg_alpha': 0.01
-                # }
                 model = lgb.train(params=params, train_set=train_m, valid_sets=test_m, num_boost_round=20000,
                                   verbose_eval=1000, early_stopping_rounds=200)
                 val_pred = model.predict(test_x_split, num_iteration=model.best_iteration)
@@ -524,78 +499,6 @@ class DaiKuan:
             print('cv scores', cv_score)
             print('cv score means', np.mean(cv_score))
             print('cv std', np.std(cv_score))
-
-            # params = {
-            #     'boosting_type': 'gbdt',
-            #     'objective': 'binary',
-            #     'learning_rate': 0.01,
-            #     'metric': 'auc',
-            #     'num_leaves': 15,
-            #     'max_depth': 18,
-            #     'min_data_in_leaf': 23,
-            #     'min_child_weight': 1.4,
-            #     'reg_lambda': 9,
-            #     'reg_alpha': 8,
-            #     'feature_fraction': 0.56,
-            #     'bagging_fraction': 0.92,
-            #     'bagging_freq': 99,
-            #     'min_split_gain': 0.84,
-            #     'nthread': 8
-            # }
-
-            # cv_result_lgb = lgb.cv(train_set=train_m,
-            #                        early_stopping_rounds=1000,
-            #                        num_boost_round=20000,
-            #                        nfold=10,
-            #                        stratified=True,
-            #                        shuffle=True,
-            #                        params=params,
-            #                        metrics='auc',
-            #                        seed=2020
-            #                        )
-            # print('迭代次数{}'.format(len(cv_result_lgb['auc-mean'])))
-            # print('最终模型的AUC为{}'.format(max(cv_result_lgb['auc-mean'])))
-
-            # 2020-09-16
-            # params = {
-            #     'boosting_type': 'gbdt',
-            #     'objective': 'binary',
-            #     'learning_rate': 0.01,
-            #     'n_estimators': 192,
-            #     'metric': 'auc',
-            #     'num_leaves': 15,
-            #     'max_depth': 18,
-            #     'min_data_in_leaf': 32,
-            #     'min_child_weight': 1.4,
-            #     'min_split_gain': 0.4,
-            #     'reg_lambda': 9,
-            #     'reg_alpha': 8,
-            #     'feature_fraction': 0.6,
-            #     'bagging_fraction': 0.95,
-            #     'bagging_freq': 95,
-            #     'nthread': 8
-            # }
-
-            # params = {
-            #     'boosting_type': 'gbdt',
-            #     'objective': 'binary',
-            #     'learning_rate': 0.01,
-            #     'n_estimators': 192,
-            #     'metric': 'auc',
-            #     'num_leaves': 10,
-            #     'max_depth': 24,
-            #     'min_data_in_leaf': 12,
-            #     'min_child_weight': 1.48,
-            #     'min_split_gain': 0.56,
-            #     'reg_lambda': 0.17,
-            #     'reg_alpha': 8.9,
-            #     'feature_fraction': 0.6,
-            #     'bagging_fraction': 0.88,
-            #     'bagging_freq': 35,
-            #     'nthread': 8
-            # }
-            # model = lgb.train(params, train_set=train_m, valid_sets=test_m, num_boost_round=10000, verbose_eval=1000,
-            #                   early_stopping_rounds=200)
             #
             # val_pre_lgb = model.predict(test_xx)
             #
@@ -652,9 +555,137 @@ class DaiKuan:
             # joblib.dump(bayes_lgb, os.path.join(daikuan_path, 'bayes_lgb_model'))
             print(bayes_lgb.max)
 
+    @running_of_time
+    def train_model(self, model='lr', balance=False):
+        kfold = KFold(n_splits=10, shuffle=True, random_state=2020)
+        for epoch in range(3):
+            train_x, train_y, test = self.load_train_x_train_y_test_x(balance)
+            train_x, train_y = self.shuffle(train_x, train_y)
+            # train_x, train_y = self.balance_data(train_x, train_y)
+            for i, (train_idx, valid_idx) in enumerate(kfold.split(train_x, train_y)):
+                train_xx, train_yy = train_x[train_idx], train_y[train_idx]
+                valid_xx, valid_yy = train_x[valid_idx], train_y[valid_idx]
+                if model == 'lr':
+                    lr = LogisticRegression(C=10, solver='liblinear', max_iter=100, n_jobs=1)
+                    lr.fit(X=train_xx, y=train_yy.reshape(-1, ))
+                    joblib.dump(lr, os.path.join(daikuan_path, 'model', 'lr_epoch_{}_k_{}.model'.format(epoch, i)))
+                    # 验证集预测
+                    prob = lr.predict_proba(valid_xx)
+                    i, j, k = metrics.roc_curve(valid_yy, prob[:, 1])
+                    roc_auc = metrics.auc(i, j)
+                    print('lr valid roc_auc is', roc_auc)
+                elif model == 'svm':
+                    svc = SVC(C=10, kernel='rbf', verbose=True, max_iter=-1, gamma='scale')
+                    svc.fit(train_xx, train_yy.reshape(-1, ))
+                    joblib.dump(svc, os.path.join(daikuan_path, 'model', 'svc_epoch_{}_k_{}.model'.format(epoch, i)))
+                    prob = svc.predict_proba(valid_xx)
+                    i, j, k = metrics.roc_curve(valid_yy, prob[:, 1])
+                    roc_auc = metrics.auc(i, j)
+                    print('svc valid roc_auc is', roc_auc)
+                elif model == 'lgb':
+                    train_m = lgb.Dataset(train_xx, train_yy.reshape(-1, ))
+                    valid_m = lgb.Dataset(valid_xx, valid_yy.reshape(-1, ))
+
+                    params = {
+                        'boosting_type': 'gbdt',
+                        'objective': 'binary',
+                        'learning_rate': 0.01,
+                        'metric': 'auc',
+                        'num_leaves': 14,
+                        'max_depth': 19,
+                        'min_data_in_leaf': 37,
+                        'min_child_weight': 1.6,
+                        'reg_lambda': 9,
+                        'reg_alpha': 7,
+                        'feature_fraction': 0.69,
+                        'bagging_fraction': 0.98,
+                        'bagging_freq': 96,
+                        'min_split_gain': 0.4,
+                        'nthread': 4
+                    }
+
+                    # params = {
+                    #     'boosting_type': 'gbdt',
+                    #     'objective': 'binary',
+                    #     'learning_rate': 0.01,
+                    #     'metric': 'auc',
+                    #     'num_leaves': 16,
+                    #     'max_depth': 19,
+                    #     'min_data_in_leaf': 37,
+                    #     'min_child_weight': 1.6,
+                    #     'reg_lambda': 9,
+                    #     'reg_alpha': 7,
+                    #     'feature_fraction': 0.69,
+                    #     'bagging_fraction': 0.9,
+                    #     'bagging_freq': 90,
+                    #     'min_split_gain': 0.4
+                    # }
+                    m = lgb.train(params=params, train_set=train_m, valid_sets=valid_m, num_boost_round=13000,
+                                  verbose_eval=1000, early_stopping_rounds=200)
+                    val_pre_lgb = m.predict(valid_xx)
+
+                    fpr, tpr, threshold = metrics.roc_curve(valid_yy, val_pre_lgb)
+                    print(fpr.shape, tpr.shape, threshold.shape)
+                    roc_auc = metrics.auc(fpr, tpr)
+                    joblib.dump(m, os.path.join(daikuan_path, 'model', 'lgb2_epoch_{}_k_{}.model'.format(epoch, i)))
+                    print('调参lightgbm单模型在验证集上的AUC：{}'.format(roc_auc))
+
+    @running_of_time
+    def predict(self):
+        train_x, train_y, test = self.load_train_x_train_y_test_x(False)
+        epochs = 2
+        k = 10
+        lr, lgb = [], []
+        cv_score = []
+        for epoch in range(epochs):
+            for i in range(k):
+                now = time.time()
+                print('epochs', epoch, 'k', i)
+                # model = joblib.load(os.path.join(daikuan_path, 'model', 'lr_epoch_{}_k_{}.model'.format(epoch, i)))
+                # print('begin lr predict proba')
+                # train_prob = model.predict_proba(test)
+                # train_prob = train_prob[:, 1]
+                # print('lr predict shape', train_prob.shape)
+                # lr.append(train_prob.reshape(-1, 1))
+
+                model = joblib.load(os.path.join(daikuan_path, 'model', 'lgb2_epoch_{}_k_{}.model'.format(epoch, i)))
+                print('begin lgb predict')
+                train_prob = model.predict(test)
+                print('lgb predict shape', train_prob.shape)
+                lgb.append(train_prob.reshape(-1, 1))
+                print('epoch {}, k {} done. time: {}'.format(epoch, i, int(time.time() - now)))
+
+        # merge_lr = np.concatenate(lr, axis=-1)
+        # print('合并后的 lr shape', merge_lr.shape)
+        # with open(os.path.join(daikuan_path, 'lr_train_kfold_5.npy'), mode='wb') as f:
+        #     pickle.dump(merge_lr, f)
+        merge_lgb = np.concatenate(lgb, axis=-1)
+        print('合并后的 lgb shape', merge_lgb.shape)
+        with open(os.path.join(daikuan_path, 'lgb2_train_kfold_10.npy'), mode='wb') as f:
+            pickle.dump(merge_lgb, f)
+
+    @running_of_time
+    def test(self):
+        # with open(os.path.join(daikuan_path, 'lr_train_kfold_5.npy'), mode='rb') as f:
+        #     merge_lr = pickle.load(f)
+
+        with open(os.path.join(daikuan_path, 'lgb2_train_kfold_10.npy'), mode='rb') as f:
+            merge_lgb = pickle.load(f)
+
+        # merge = np.concatenate([merge_lr, merge_lgb], axis=-1)
+
+        merge = merge_lgb
+
+        with open(os.path.join(daikuan_path, 'sample_submit4.csv'), mode='w') as f:
+            f.write('id,isDefault\n')
+            for idx, y in enumerate(np.mean(merge, axis=1)):
+                f.write('{},{}\n'.format(idx + 800000, y))
+
 
 if __name__ == '__main__':
     dai = DaiKuan()
     # dai.format_train_x_train_y_test_x(daikuan_classifier_path, daikuan_test_path)
-    # dai.load_train_x_train_y_test_x()
-    dai.train(model='lgb', balance=True)
+    # dai.train_model(model='lgb', balance=False)
+    # dai.train(model='lr', balance=False)
+    # dai.predict()
+    dai.test()

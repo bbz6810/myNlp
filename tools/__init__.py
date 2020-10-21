@@ -142,9 +142,11 @@ def wash_news():
 
 def running_of_time(f):
     def g(*args, **kwargs):
+        print('function: {}, start at: {}.'.format(f.__name__, time.strftime('%Y-%m-%d %H:%M:%S')))
         now = time.time()
         r = f(*args, **kwargs)
-        print('function: {}, cost time: {}'.format(f.__name__, time.time() - now))
+        print('function: {}, end at: {}, cost time: {}s.'.format(f.__name__, time.strftime('%Y-%m-%d %H:%M:%S'),
+                                                                 int(time.time() - now)))
         return r
 
     return g
