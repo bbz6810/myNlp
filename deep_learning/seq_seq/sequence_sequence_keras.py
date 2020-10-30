@@ -9,15 +9,16 @@ import keras
 import joblib
 from keras.layers import *
 from keras_layer_normalization import LayerNormalization
-from keras.models import Model
+from keras.models import Model, load_model
 from keras.callbacks import Callback
 from keras.optimizers import Adam
+from keras.utils import get_custom_objects
 
 from corpus.load_corpus import LoadCorpus
 from corpus import seq2seq_config_path, seq2seq_data_path, corpus_root_path
 
 min_count = 32
-maxlen = 100
+maxlen = 50
 batch_size = 32
 char_size = 128
 z_dim = 128
@@ -65,7 +66,6 @@ def data_generator():
             y = pickle.load(f)
     else:
         x, y = LoadCorpus.load_xiaohuangji_train()
-        # x, y = x[:10000], y[:10000]
         x = [i.replace(' ', '') for i in x]
         y = [i.replace(' ', '') for i in y]
         x = np.array(padding([str2id(i) for i in x]))
@@ -73,6 +73,7 @@ def data_generator():
         with open(seq2seq_data_path, mode='wb') as f:
             pickle.dump(x, f)
             pickle.dump(y, f)
+    # x, y = x[:1000], y[:1000]
     return [x, y], None
 
 
@@ -155,6 +156,16 @@ class OurBidirectional(OurLayer):
     def compute_output_shape(self, input_shape):
         return input_shape[0][:-1] + (self.forward_layer.units * 2,)
 
+    def get_config(self):
+        base_config = super(OurBidirectional, self).get_config()
+        print(self.forward_layer.get_config())
+        config = {
+            'forward_layer': self.forward_layer.get_config(),
+            'backward_layer': self.backward_layer.get_config(),
+            # 'layer': self.layer.get_config()
+        }
+        return dict(list(base_config.items()) + list(config.items()))
+
 
 def seq_avgpool(x):
     seq, mask = x
@@ -195,6 +206,11 @@ class SelfModulatedLayerNormalization(OurLayer):
 
     def compute_output_shape(self, input_shape):
         return input_shape[0]
+
+    def get_config(self):
+        base_config = super(SelfModulatedLayerNormalization, self).get_config()
+        config = {'num_hidden': self.num_hidden}
+        return dict(list(base_config.items()) + list(config.items()))
 
 
 class Attention(OurLayer):
@@ -277,8 +293,8 @@ def build_model():
     x_mask = Lambda(lambda x: K.cast(K.greater(K.expand_dims(x, 2), 0), 'float32'))(x)
     y_mask = Lambda(lambda x: K.cast(K.greater(K.expand_dims(x, 2), 0), 'float32'))(y)
 
-    x_one_hot = Lambda(to_one_hot)([x, x_mask])
-    x_prior = ScaleShift()(x_one_hot)  # 学习输出的先验分布，标题可能出现在文章中
+    # x_one_hot = Lambda(to_one_hot)([x, x_mask])
+    # x_prior = ScaleShift()(x_one_hot)  # 学习输出的先验分布，标题可能出现在文章中
 
     embedding = Embedding(len(chars) + 4, char_size)
     x = embedding(x)
@@ -305,8 +321,10 @@ def build_model():
     # 输出分类
     xy = Dense(char_size)(xy)
     xy = LeakyReLU(0.2)(xy)
+    xy = Dropout(0.2)(xy)
     xy = Dense(len(chars) + 4)(xy)
-    xy = Lambda(lambda x: (x[0] + x[1]) / 2)([xy, x_prior])
+    # xy = Lambda(lambda x: (x[0] + x[1]) / 2)([xy, x_prior])
+    xy = Lambda(lambda x: (x[0]) / 2)([xy])
     xy = Activation('softmax')(xy)
 
     # 交叉熵损失，mask掉padding部分
@@ -351,24 +369,40 @@ def gen_sent(model, s, topk=3, maxlen=64):
     return id2str(yid[np.argmax(scores)])
 
 
-# class Evaluate(Callback):
-#     def __init__(self):
-#         self.lowest = 1e10
-#
-#     def on_epoch_end(self, epoch, logs=None):
-#         print(gen_sent(model, s1))
-#         print(gen_sent(model, s2))
-#         if logs['loss'] <= self.lowest:
-#             self.lowest = logs['loss']
-#             model.save_weights(os.path.join(corpus_root_path, 'seq2seq', 'best_model.weights'))
+class Evaluate(Callback):
+    def __init__(self):
+        super(Evaluate, self).__init__()
+        self.lowest = 1e10
+        self.weights_name = 'seq2seq.weights.2epoch_[{}]_val_loss_[{:.4f}]_loss_[{:.4f}]'
+
+    def on_epoch_end(self, epoch, logs=None):
+        global model
+        # 保存最优结果
+        if logs['loss'] <= self.lowest:
+            self.lowest = logs['loss']
+            model.save_weights(os.path.join(corpus_root_path, 'seq2seq',
+                                            self.weights_name.format(epoch, logs['val_loss'], self.lowest)))
 
 
 def running():
     x, y = data_generator()
-    model = build_model()
-    model.fit(x, y, epochs=5, validation_split=0.2, shuffle=True, batch_size=batch_size)
-    joblib.dump(model, os.path.join(corpus_root_path, 'seq2seq', 'seq2seq.model'))
+    model.load_weights(os.path.join(corpus_root_path, 'seq2seq', 'seq2seq.weights'))
+    model.fit(x, y, epochs=25, validation_split=0.1, shuffle=True, batch_size=batch_size, callbacks=[Evaluate()])
+    model.save_weights(os.path.join(corpus_root_path, 'seq2seq', 'seq2seq.weights'))
 
+
+def predict_sent():
+    model.load_weights(os.path.join(corpus_root_path, 'seq2seq', 'seq2seq.weights'))
+    s = ''
+    d = gen_sent(model, s)
+    print(d)
+
+
+get_custom_objects().update(
+    {'LayerNormalization': LayerNormalization, 'OurBidirectional': OurBidirectional, 'OurLayer': OurLayer})
+
+model = build_model()
 
 if __name__ == '__main__':
     running()
+    # predict_sent()

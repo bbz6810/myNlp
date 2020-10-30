@@ -9,3 +9,7 @@
 ### machine_learning 机器学习练手项目
 ### model 简单实现的机器学习模型
 ### tools 工具箱
+
+## 技巧
+#### get_custom_objects().update() 把自定义层都加载到源包中
+如果有参数？ 

@@ -79,25 +79,34 @@ class Word2Vector:
         return x, y
 
     def build_model(self):
+        self.nb_word = 10000
         input_words = layers.Input(shape=(window * 2,), dtype='int32')
+        print(input_words)
         input_vecs = layers.Embedding(self.nb_word, word_size, name='word2vec')(input_words)
+        print(input_vecs)
         input_vecs_sum = layers.Lambda(lambda x: K.sum(x, axis=1))(input_vecs)
+        print(input_vecs_sum)
 
         # 构造负采样
         target_word = layers.Input(shape=(1,), dtype='int32')
+        print(target_word)
         negatives = layers.Lambda(
             lambda x: K.random_uniform((K.shape(x)[0], nb_negative), 0, self.nb_word, dtype='int32'))(
             target_word)
+        print(negatives)
         samples = layers.Lambda(lambda x: K.concatenate(x))([target_word, negatives])
-
+        print(samples)
         # 只在抽样内做Dense和softmax
         softmax_weights = layers.Embedding(self.nb_word, word_size, name='w')(samples)
+        print(softmax_weights)
         softmax_biases = layers.Embedding(self.nb_word, 1, name='b')(samples)
+        print(softmax_biases)
         softmax = layers.Lambda(lambda x: K.softmax((K.batch_dot(x[0], K.expand_dims(x[1], 2)) + x[2])[:, :, 0]))(
             [softmax_weights, input_vecs_sum, softmax_biases])
+        print(softmax)
         model = models.Model(inputs=[input_words, target_word], outputs=softmax)
         model.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-        print(model.summary())
+        # print(model.summary())
         return model
 
     def train(self):
@@ -169,7 +178,8 @@ class Word2Vector:
 
 if __name__ == '__main__':
     word2vec = Word2Vector()
-    word2vec.train()
+    word2vec.build_model()
+    # word2vec.train()
     # a = word2vec.most_similarity('计算机')
     # print(a)
     # b = word2vec.sim('大学', '大学生')

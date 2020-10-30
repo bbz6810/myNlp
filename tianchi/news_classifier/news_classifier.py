@@ -5,13 +5,13 @@ import pickle
 sys.path.append('/Users/zhoubb/projects/myNlp')
 
 import numpy as np
-from sklearn.model_selection import train_test_split, KFold
+from sklearn.model_selection import KFold
 from keras.preprocessing.sequence import pad_sequences
 from keras.utils import to_categorical
 
-from corpus import tianchi_news_class_path, news_classifier_path, news_test_path
+from corpus import tianchi_news_class_path, news_test_path
 from tools import running_of_time
-from deep_learning.tianchi.news_classifier.base_model import TextRNN, FastText, TextCNN
+from tianchi.news_classifier.base_model import TextCNN
 
 
 class TCNewsClass:

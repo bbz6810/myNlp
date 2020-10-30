@@ -9,9 +9,8 @@ from gensim.models import KeyedVectors
 
 from corpus import tianchi_news_class_path
 from tools import running_of_time
-from deep_learning.simple_attention.simple_attention_keras import SimpleAttention
 from deep_learning.simple_attention.simple_attention2_keras import Attention
-from deep_learning.tianchi.news_classifier.textcnn_word2vec import build_word2vec
+from tianchi.news_classifier import build_word2vec
 
 
 class BaseNN:

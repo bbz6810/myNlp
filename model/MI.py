@@ -1,9 +1,15 @@
 """互信息
     MI(x, y) = log_2(p(x,y) / p(x)*p(y))
 """
-
+import re
+import os
 import math
+import pickle
 import numpy as np
+import pandas as pd
+
+from corpus import news_path, news_jieba_path, corpus_root_path
+from tools import running_of_time
 
 word_path = '/projects/myNlp/machine_learning/wechat_new_word_data.txt'
 
@@ -55,10 +61,62 @@ class MI:
                 self.d[value1][value2] = self.data_dict.get(key1 + key2, 1)
 
 
+class WS:
+    def __init__(self):
+        self.one = {}
+        self.two = {}
+
+    @running_of_time
+    def train(self):
+        # files = open(news_jieba_path, mode='r', encoding='gb2312').readlines()
+        # for file in files:
+        #     file = ''.join(file.strip().split(' ')[:-1])
+        #
+        #     drop_dict = ['，', '\n', '。', '、', '：', '(', ')', '[', ']', '.', ',', ' ', '\u3000', '”', '“',
+        #                  '？', '?', '！', '‘', '’', '…']
+        #     for i in drop_dict:  # 去掉标点字
+        #         file = file.replace(i, '')
+        #
+        #     for idx in range(len(file) - 1):
+        #         self.one[file[idx]] = self.one.get(file[idx], 0) + 1
+        #         self.two[file[idx:idx + 2]] = self.two.get(file[idx:idx + 2], 0) + 1
+        #     self.one[file[idx + 1]] = self.one.get(file[idx + 1], 0) + 1
+        #
+        # with open(os.path.join(corpus_root_path, 'keys.txt'), mode='wb') as f:
+        #     pickle.dump(self.one, f)
+        #     pickle.dump(self.two, f)
+        # print(len(self.one))
+        # print(len(self.two))
+
+        with open(os.path.join(corpus_root_path, 'keys.txt'), mode='rb') as f:
+            self.one = pickle.load(f)
+            self.two = pickle.load(f)
+
+        tmp_one = dict()
+        one_sum = sum(self.one.values())
+        tmp_two = dict()
+        two_sum = sum(self.two.values())
+        for k, v in self.one.items():
+            tmp_one[k] = v / one_sum
+
+        for k, v in self.two.items():
+            tmp_two[k] = v / two_sum
+
+        r = []
+        for t in tmp_two:
+            one, two = t
+            tmp_two.get(t)
+            score = math.log(tmp_two.get(t) / (tmp_one.get(one) * tmp_one.get(two)), 2)
+            r.append((t, score))
+
+        print(sorted(r, key=lambda x: x[1], reverse=True)[:1000])
+
+
 def test():
     mi = MI()
     mi.train()
 
 
 if __name__ == '__main__':
-    test()
+    ws = WS()
+    ws.train()
