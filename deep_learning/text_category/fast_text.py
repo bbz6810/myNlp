@@ -1,4 +1,5 @@
 import os
+from functools import reduce
 import torch
 import numpy as np
 import torch.nn as nn
@@ -11,7 +12,7 @@ from tools import running_of_time
 from corpus import corpus_root_path
 
 batch_size = 32
-epochs = 300
+epochs = 16
 
 
 class FastText(NN):
@@ -56,7 +57,7 @@ class FastText2(nn.Module):
         self.embedding.weight.requires_grad = True
         self.fc = nn.Sequential(
             nn.Linear(nn_param.embedding_dim, 128),
-            nn.BatchNorm1d(128),
+            # nn.BatchNorm1d(128),
             nn.ReLU(inplace=True),
             nn.Linear(128, nn_param.class_num)
         )
@@ -95,6 +96,7 @@ def train_model(net, train_x, train_y, epoch, lr):
     l_train = len(train_x)
     net.train()
     optimizer = optim.Adam(net.parameters(), lr=lr)
+    # optimizer = optim.SGD(net.parameters(), lr=lr, momentum=0.9)
     criterion = nn.CrossEntropyLoss()
 
     num_correct = 0
@@ -109,8 +111,8 @@ def train_model(net, train_x, train_y, epoch, lr):
         num_correct += torch.eq(pred, y).sum().float().item()
         if idx % 10 == 0:
             print('train epoch={}, samples={}->[{:.2%}], loss={:.6}'.format(epoch, idx * batch_size,
-                                                                         idx * batch_size / l_train,
-                                                                         loss.item() / batch_size))
+                                                                            idx * batch_size / l_train,
+                                                                            loss.item() / batch_size))
     print('train epoch={}, correct={:.2%}'.format(epoch, num_correct / l_train))
 
 
@@ -128,16 +130,20 @@ def test_model(net, test_x, test_y):
 
 def run_pytorch():
     pretreatment = Pretreatment()
-    train_x, test_x, train_y, test_y = pretreatment.train_test_split(c=20, test_size=0.1)
+    train_x, test_x, train_y, test_y = pretreatment.train_test_split(c=3, y_one_hot=False, test_size=0.1)  # 0.9785
     train_x, train_y, test_x, test_y = data2tensor(train_x, train_y, test_x, test_y)
 
     fasttext = FastText2(pretreatment.nnparam)
+    p = 0
     for k, v in fasttext.named_parameters():
         print('name', k, 'param', v.size())
+        p += reduce(lambda x, y: x * y, list(v.size()))
+    print(fasttext)
+    print('参数量', p)
 
     for epoch in range(epochs):
-        train_model(net=fasttext, train_x=train_x, train_y=train_y, epoch=epoch, lr=0.00001)
-    test_model(fasttext, test_x, test_y)
+        train_model(net=fasttext, train_x=train_x, train_y=train_y, epoch=epoch, lr=0.0001)
+        test_model(fasttext, test_x, test_y)
     torch.save(fasttext, os.path.join(corpus_root_path, 'torch_demo', 'fasttext.pkl'))
 
 
@@ -148,7 +154,7 @@ def run_keras():
     textrnn = FastText(pretreatment.nnparam)
     # textrnn.train(train_x, train_y, embedding_matrix)  # 精度 0.9323043484250149 损失 0.270193725742771
     textrnn.train(train_x, train_y, '')  # 精度 0.9353858005601531 损失 0.2599002837189978
-    # textrnn.predict(test_x, test_y)
+    textrnn.predict(test_x, test_y)
 
 
 if __name__ == '__main__':

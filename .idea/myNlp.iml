@@ -4,8 +4,8 @@
     <content url="file://$MODULE_DIR$" />
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module" module-name="ELMo-keras-master" />
-    <orderEntry type="module" module-name="rank4_NLP_textclassification-master" />
+    <orderEntry type="module" module-name="transformer-pytorch" />
+    <orderEntry type="module" module-name="DataScheduler" />
   </component>
   <component name="TestRunnerService">
     <option name="projectConfiguration" value="Twisted Trial" />
