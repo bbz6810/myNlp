@@ -15,7 +15,6 @@ batch_size = 32
 epochs = 16
 
 
-
 class TextCNN2(nn.Module):
     def __init__(self, nn_param):
         super(TextCNN2, self).__init__()
