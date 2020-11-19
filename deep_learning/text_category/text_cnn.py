@@ -12,7 +12,7 @@ from tools import running_of_time
 from corpus import corpus_root_path
 
 batch_size = 32
-epochs = 16
+epochs = 32
 
 
 class TextCNN2(nn.Module):
@@ -26,7 +26,7 @@ class TextCNN2(nn.Module):
                            nn.ReLU(),
                            nn.MaxPool1d(kernel_size=self.nn_param.max_words - h + 1))
              for h in range(2, 6)])
-        self.dropout = nn.Dropout(0.5)
+        self.dropout = nn.Dropout(0.6)
         self.fc = nn.Linear(in_features=256 * 4, out_features=self.nn_param.class_num)
 
     def forward(self, x):
@@ -67,8 +67,7 @@ def train_model(net, train_x, train_y, epoch, lr):
     print('begin training epoch', epoch)
     l_train = len(train_x)
     net.train()
-    # optimizer = optim.Adam(net.parameters(), lr=lr)
-    optimizer = optim.SGD(net.parameters(), lr=lr, momentum=0.9)
+    optimizer = optim.Adam(net.parameters(), lr=lr)
     criterion = nn.CrossEntropyLoss()
 
     num_correct = 0

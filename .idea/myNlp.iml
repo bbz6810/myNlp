@@ -6,6 +6,7 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="transformer-pytorch" />
     <orderEntry type="module" module-name="DataScheduler" />
+    <orderEntry type="module" module-name="jiaoyan_spider" />
   </component>
   <component name="TestRunnerService">
     <option name="projectConfiguration" value="Twisted Trial" />
