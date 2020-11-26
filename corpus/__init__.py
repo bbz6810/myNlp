@@ -75,3 +75,9 @@ elmo_module_path = os.path.join(elmo_data_base_path, 'models')
 # seq2seq对话
 seq2seq_config_path = os.path.join(corpus_root_path, 'seq2seq', 'seq2seq.config')
 seq2seq_data_path = os.path.join(corpus_root_path, 'seq2seq', 'seq2seq.data')
+
+# mnist手写体识别数据
+mnist_x_train_path = os.path.join(corpus_root_path, 'mnist', 'train-images-idx3-ubyte.gz')
+mnist_y_train_path = os.path.join(corpus_root_path, 'mnist', 'train-labels-idx1-ubyte.gz')
+mnist_x_test_path = os.path.join(corpus_root_path, 'mnist', 't10k-images-idx3-ubyte.gz')
+mnist_y_test_path = os.path.join(corpus_root_path, 'mnist', 't10k-labels-idx1-ubyte.gz')
