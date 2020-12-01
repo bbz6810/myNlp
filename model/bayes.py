@@ -1,6 +1,8 @@
 import math
 import marshal
 import gzip
+import numpy as np
+from corpus.load_corpus import LoadCorpus
 
 
 class AddOneCategory:
@@ -75,3 +77,56 @@ class Bayes:
             if now > prob:
                 ret, prob = k, now
         return ret, prob
+
+
+def naive_bayes(py, pxy, x):
+    feature_num = 768
+    class_num = 10
+    p = [0] * class_num
+    for i in range(class_num):
+        sum = 0
+        for j in range(feature_num):
+            sum += pxy[i][j][x[j]]
+        p[i] = sum + py[i]
+    return p.index(max(p))
+
+
+def model_test(py, pxy, test_x, test_y):
+    error_cnt = 0
+    for i in range(test_x.shape[0]):
+        predict = naive_bayes(py, pxy, test_x[i])
+        if predict != test_y[i]:
+            error_cnt += 1
+    return 1 - error_cnt / test_x.shape[0]
+
+
+def get_all_probability(train_x, train_y):
+    feature_num = 768
+    class_num = 10
+
+    py = np.zeros((class_num, 1))
+    for i in range(class_num):
+        py[i] = ((np.sum(np.mat(train_x) == i)) + 1) / (train_x.shape[0] + 10)
+    py = np.log(py)
+
+    pxy = np.zeros((class_num, feature_num, 2))
+    for i in range(train_x.shape[0]):
+        label = train_y[i]
+        x = train_x[i]
+        for j in range(feature_num):
+            pxy[label][j][x[j]] += 1
+
+    for label in range(class_num):
+        for j in range(feature_num):
+            pxy0 = pxy[label][j][0]
+            pxy1 = pxy[label][j][1]
+            pxy[label][j][0] = np.log((pxy0 + 1) / (pxy0 + pxy1 + 2))
+            pxy[label][j][1] = np.log((pxy1 + 1) / (pxy0 + pxy1 + 2))
+    return py, pxy
+
+
+if __name__ == '__main__':
+    train_x, train_y, test_x, test_y = LoadCorpus.load_mnist()
+    py, pxy = get_all_probability(train_x, train_y)
+    score = model_test(py, pxy, test_x, test_y)
+    print('score', score)

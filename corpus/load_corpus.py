@@ -151,30 +151,26 @@ class LoadCorpus:
 
     @classmethod
     @running_of_time
-    def load_mnist(cls, data_name, label_name, test_name, test_label):
+    def load_mnist(cls, data_name=mnist_x_train_path, label_name=mnist_y_train_path, test_name=mnist_x_test_path,
+                   test_label=mnist_y_test_path):
         mnist = Mnist(data_name, label_name, test_name, test_label)
         x_train = deepcopy(mnist.train_set)
         y_train = deepcopy(mnist.train_labels)
         x_test = deepcopy(mnist.test_set)
         y_test = deepcopy(mnist.test_label)
+        # return x_train, y_train, x_test, y_test
 
-        # for idx, i in enumerate(y_train):
-        #     if i > 1:
-        #         y_train[idx] = 1
-        # for idx, i in enumerate(y_test):
-        #     if i > 1:
-        #         y_test[idx] = 1
+        # x_train = np.concatenate([x_train[y_train == 0], x_train[y_train == 1]])
+        # y_train = np.concatenate(
+        #     [np.zeros(shape=(list(y_train == 0).count(True),)), np.ones(shape=(list(y_train == 1).count(True),))])
+        #
+        # x_test = np.concatenate([x_test[y_test == 0], x_test[y_test == 1]])
+        # y_test = np.concatenate(
+        #     [np.zeros(shape=(list(y_test == 0).count(True),)), np.ones(shape=(list(y_test == 1).count(True),))]
+        # )
+        # # return x_train / 255, y_train, x_test / 255, y_test
 
-        x_train = np.concatenate([x_train[y_train == 0], x_train[y_train == 1]])
-        y_train = np.concatenate(
-            [np.zeros(shape=(list(y_train == 0).count(True),)), np.ones(shape=(list(y_train == 1).count(True),))])
-
-        x_test = np.concatenate([x_test[y_test == 0], x_test[y_test == 1]])
-        y_test = np.concatenate(
-            [np.zeros(shape=(list(y_test == 0).count(True),)), np.ones(shape=(list(y_test == 1).count(True),))]
-        )
-
-        return x_train / 255, y_train, x_test / 255, y_test
+        return (x_train > 128) + 0, y_train, (x_test > 128) + 0, y_test
 
 
 class Mnist(Dataset):

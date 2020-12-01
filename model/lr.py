@@ -163,9 +163,9 @@ class LogicR:
 if __name__ == '__main__':
     lr = LogicR()
     x, y, testx, testy = lr.load_data()
-    w = lr.logistic_regression(x, y)
-    score = lr.test(testx, testy, w)
-    print(score)
+    # w = lr.logistic_regression(x, y)
+    # score = lr.test(testx, testy, w)
+    # print(score)
     from sklearn.linear_model import LogisticRegression
     lr = LogisticRegression()
     lr.fit(x, y)
