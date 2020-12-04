@@ -158,7 +158,6 @@ class LoadCorpus:
         y_train = deepcopy(mnist.train_labels)
         x_test = deepcopy(mnist.test_set)
         y_test = deepcopy(mnist.test_label)
-        # return x_train, y_train, x_test, y_test
 
         # x_train = np.concatenate([x_train[y_train == 0], x_train[y_train == 1]])
         # y_train = np.concatenate(
@@ -169,8 +168,21 @@ class LoadCorpus:
         #     [np.zeros(shape=(list(y_test == 0).count(True),)), np.ones(shape=(list(y_test == 1).count(True),))]
         # )
         # # return x_train / 255, y_train, x_test / 255, y_test
+        #
+        # return (x_train > 128) + 0, y_train, (x_test > 128) + 0, y_test
+        # # return x_train, y_train, x_test, y_test
 
+        x_train = np.concatenate([x_train[y_train == 0], x_train[y_train == 1]])
+        y_train = np.concatenate(
+            [np.ones(shape=(list(y_train == 0).count(True),)), -np.ones(shape=(list(y_train == 1).count(True),))])
+
+        x_test = np.concatenate([x_test[y_test == 0], x_test[y_test == 1]])
+        y_test = np.concatenate(
+            [np.ones(shape=(list(y_test == 0).count(True),)), -np.ones(shape=(list(y_test == 1).count(True),))]
+        )
+        samples = 1000
         return (x_train > 128) + 0, y_train, (x_test > 128) + 0, y_test
+        # return x_train[:samples] / 255, y_train[:samples], x_test[:samples] / 255, y_test[:samples]
 
 
 class Mnist(Dataset):
