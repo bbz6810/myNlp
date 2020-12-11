@@ -43,39 +43,41 @@ class Pretreatment:
         self.nnparam.set_max_words(int(sum(len(i) for i in texts_seq) / len(texts_seq)))
         return pad_sequences(texts_seq, maxlen=self.nnparam.max_words)
 
-    def pre_y(self, y):
+    def pre_y(self, y, one_hot=True):
         set_label = set(map(str, y))
         _y = dict()
         for i in set_label:
             _y[i] = len(_y)
-
+        self.nnparam.set_class_num(len(set_label))
         train_y = list()
-        if len(set_label) == 2:
-            self.nnparam.set_class_num(2)
-            for b in y:
-                train_y.append([_y[b]])
+        if one_hot:
+            if len(set_label) == 2:
+                for b in y:
+                    train_y.append([_y[b]])
+            else:
+                for b in y:
+                    t = np.zeros(len(set_label))
+                    t[_y[b]] = 1
+                    train_y.append(t)
         else:
-            self.nnparam.set_class_num(len(set_label))
-            for b in y:
-                t = np.zeros(len(set_label))
-                t[_y[b]] = 1
-                train_y.append(t)
+            for i in y:
+                train_y.append(_y[i])
         train_y = np.array(train_y)
         print('pre_y, 生成y值向量', train_y.shape)
         return train_y
 
-    def train_test_split(self, c, test_size=0.2):
-        x, y = self.shuffle(*self.pre_data(c))
-        train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=test_size)
+    def train_test_split(self, c, y_one_hot, test_size=0.2, random_state=2020):
+        x, y = self.shuffle(*self.pre_data(c, y_one_hot))
+        train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=test_size, random_state=random_state)
         return train_x, test_x, train_y, test_y
 
     def shuffle(self, x, y):
         location = np.random.permutation(len(x))
         return x[location], y[location]
 
-    def pre_data(self, c):
+    def pre_data(self, c, y_one_hot=True):
         x, y = LoadCorpus.load_news_train(c=c)
-        train_x, train_y = self.pre_x(x), self.pre_y(y)
+        train_x, train_y = self.pre_x(x), self.pre_y(y, y_one_hot)
         return train_x, train_y
 
     def create_embedding_matrix(self, split):

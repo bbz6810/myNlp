@@ -5,18 +5,17 @@ import time
 import joblib
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import AdaBoostClassifier
-from sklearn.model_selection import train_test_split, GridSearchCV, KFold
+from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.linear_model import LogisticRegression
 from sklearn.decomposition import PCA
 from sklearn.svm import SVC
-from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor, GradientBoostingClassifier
+from sklearn.ensemble import GradientBoostingClassifier
 from lightgbm import LGBMRegressor
-from sklearn.metrics import mean_squared_error
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn import metrics
 
 from tools import running_of_time
-from corpus import daikuan_classifier_path, daikuan_test_path, corpus_root_path, daikuan_path
+from corpus import daikuan_path
 
 """
     1、删除错误列数据并返回x和y
@@ -261,7 +260,7 @@ class DaiKuan:
 
 
 if __name__ == '__main__':
-    from deep_learning.tianchi.daikuan_stand import DaiKuan
+    from tianchi.daikuan import DaiKuan
     dai = DaiKuan()
     # dai.format_train_x_train_y_test_x(daikuan_classifier_path, daikuan_test_path)
     # dai.load_train_x_train_y_test_x()

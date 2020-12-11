@@ -66,3 +66,18 @@ knowledge_graph_root_path = os.path.join(corpus_root_path, 'question_answer_data
 # 实体识别 关系抽取
 ner_relation_extract_path = os.path.join(corpus_root_path, 'ner_ie')
 chinese_ner_path = os.path.join(ner_relation_extract_path, 'chinese_ner')
+
+# elmo path
+elmo_data_base_path = os.path.join(corpus_root_path, 'elmo')
+elmo_data_set_path = os.path.join(elmo_data_base_path, 'datasets')
+elmo_module_path = os.path.join(elmo_data_base_path, 'models')
+
+# seq2seq对话
+seq2seq_config_path = os.path.join(corpus_root_path, 'seq2seq', 'seq2seq.config')
+seq2seq_data_path = os.path.join(corpus_root_path, 'seq2seq', 'seq2seq.data')
+
+# mnist手写体识别数据
+mnist_x_train_path = os.path.join(corpus_root_path, 'mnist', 'train-images-idx3-ubyte.gz')
+mnist_y_train_path = os.path.join(corpus_root_path, 'mnist', 'train-labels-idx1-ubyte.gz')
+mnist_x_test_path = os.path.join(corpus_root_path, 'mnist', 't10k-images-idx3-ubyte.gz')
+mnist_y_test_path = os.path.join(corpus_root_path, 'mnist', 't10k-labels-idx1-ubyte.gz')

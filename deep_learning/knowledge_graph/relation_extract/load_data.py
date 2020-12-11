@@ -10,7 +10,7 @@ relation2id_path = os.path.join(chinese_ner_path, 'people-relation', 'relation2i
 train_path = os.path.join(chinese_ner_path, 'people-relation', 'train.txt')
 train_cut_path = os.path.join(chinese_ner_path, 'people-relation', 'train_cut.txt')
 
-per_samples = 2000
+per_samples = 100000
 word_max_len = 60
 
 
