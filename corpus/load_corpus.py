@@ -1,10 +1,18 @@
 import re
+import gzip
 import jieba
 import random
-
+import numpy as np
+from copy import deepcopy
+import subprocess
+import platform
+import struct
 from gensim.models import KeyedVectors, word2vec
+from torchvision import datasets, transforms
+from torch.utils.data import Dataset, DataLoader
 
-from corpus import wv_model_path, news_jieba_path, chatbot100_path, wv60_model_path, xiaohuangji_path, paper_path
+from corpus import wv_model_path, news_jieba_path, chatbot100_path, wv60_model_path, xiaohuangji_path, paper_path, \
+    mnist_x_train_path, mnist_y_train_path, mnist_x_test_path, mnist_y_test_path
 from tools import n_gram, running_of_time, delete_punctuation
 
 
@@ -141,6 +149,75 @@ class LoadCorpus:
         print('加载模型', wv60_model_path)
         return word2vec.Word2Vec.load(wv60_model_path)
 
+    @classmethod
+    @running_of_time
+    def load_mnist(cls, data_name=mnist_x_train_path, label_name=mnist_y_train_path, test_name=mnist_x_test_path,
+                   test_label=mnist_y_test_path):
+        mnist = Mnist(data_name, label_name, test_name, test_label)
+        x_train = deepcopy(mnist.train_set)
+        y_train = deepcopy(mnist.train_labels)
+        x_test = deepcopy(mnist.test_set)
+        y_test = deepcopy(mnist.test_label)
+
+        # x_train = np.concatenate([x_train[y_train == 0], x_train[y_train == 1]])
+        # y_train = np.concatenate(
+        #     [np.zeros(shape=(list(y_train == 0).count(True),)), np.ones(shape=(list(y_train == 1).count(True),))])
+        #
+        # x_test = np.concatenate([x_test[y_test == 0], x_test[y_test == 1]])
+        # y_test = np.concatenate(
+        #     [np.zeros(shape=(list(y_test == 0).count(True),)), np.ones(shape=(list(y_test == 1).count(True),))]
+        # )
+        # # return x_train / 255, y_train, x_test / 255, y_test
+        #
+        # return (x_train > 128) + 0, y_train, (x_test > 128) + 0, y_test
+        # # return x_train, y_train, x_test, y_test
+
+        x_train = np.concatenate([x_train[y_train == 0], x_train[y_train == 1]])
+        y_train = np.concatenate(
+            [np.ones(shape=(list(y_train == 0).count(True),)), -np.ones(shape=(list(y_train == 1).count(True),))])
+
+        x_test = np.concatenate([x_test[y_test == 0], x_test[y_test == 1]])
+        y_test = np.concatenate(
+            [np.ones(shape=(list(y_test == 0).count(True),)), -np.ones(shape=(list(y_test == 1).count(True),))]
+        )
+        samples = 1000
+        return (x_train > 128) + 0, y_train, (x_test > 128) + 0, y_test
+        # return x_train[:samples] / 255, y_train[:samples], x_test[:samples] / 255, y_test[:samples]
+
+
+class Mnist(Dataset):
+    def __init__(self, data_name, label_name, test_name, test_label, transform=None):
+        (train_set, train_labels, test_set, test_label) = self.load_data(data_name, label_name, test_name, test_label)
+        self.train_set = train_set
+        self.train_labels = train_labels
+        self.test_set = test_set
+        self.test_label = test_label
+        self.transform = transform
+
+    def __getitem__(self, item):
+        img, target = self.train_set[item], int(self.train_labels[item])
+        if self.transform is not None:
+            img = self.transform(img)
+        return img, target
+
+    def __len__(self):
+        return len(self.train_set)
+
+    def load_data(self, data_name, lable_name, test_name, test_label):
+        with gzip.open(lable_name, mode='rb') as lbpath:
+            y_train = np.frombuffer(lbpath.read(), np.uint8, offset=8)
+
+        with gzip.open(data_name, mode='rb') as imgpath:
+            x_train = np.frombuffer(imgpath.read(), np.uint8, offset=16).reshape(len(y_train), 28 * 28)
+
+        with gzip.open(test_label, mode='rb') as test_y:
+            y_test = np.frombuffer(test_y.read(), np.uint8, offset=8)
+
+        with gzip.open(test_name, mode='rb') as test_x:
+            x_test = np.frombuffer(test_x.read(), np.uint8, offset=16).reshape(len(y_test), 28 * 28)
+
+        return x_train, y_train, x_test, y_test
+
 
 if __name__ == '__main__':
-    LoadCorpus.load_paper_to_word2vec()
+    mnist = LoadCorpus.load_mnist(mnist_x_train_path, mnist_y_train_path, mnist_x_test_path, mnist_y_test_path)

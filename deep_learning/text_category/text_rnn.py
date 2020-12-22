@@ -9,7 +9,6 @@ from deep_learning.data_pretreatment import Pretreatment
 from deep_learning.nn_param import NN
 from tools import running_of_time
 from corpus import corpus_root_path
-from deep_learning.text_category.text_cnn import TextCNN2
 
 sys.path.append('/Users/zhoubb/projects/myNlp')
 

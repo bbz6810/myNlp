@@ -4,9 +4,18 @@
     <content url="file://$MODULE_DIR$" />
     <orderEntry type="jdk" jdkName="Python 3.6 (python36_cpu)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
+<<<<<<< HEAD
   </component>
   <component name="PyDocumentationSettings">
     <option name="format" value="PLAIN" />
     <option name="myDocStringFormat" value="Plain" />
+=======
+    <orderEntry type="module" module-name="transformer-pytorch" />
+    <orderEntry type="module" module-name="DataScheduler" />
+    <orderEntry type="module" module-name="jiaoyan_spider" />
+  </component>
+  <component name="TestRunnerService">
+    <option name="PROJECT_TEST_RUNNER" value="Unittests" />
+>>>>>>> 156ed8193f90a5d2b264d9af948a4ef34af9a20b
   </component>
 </module>
