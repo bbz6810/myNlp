@@ -110,6 +110,7 @@ class CRFKeras:
 
     def train(self, train=True):
         (train_x, train_y), (test_x, test_y), vocab, self.nn_param, d_vocab = load_data()
+        print(train_x.shape)
         embedding_matrix = self.create_matrix(vocab=d_vocab)
         model = self.build_model(embedding_matrix)
         if train:
